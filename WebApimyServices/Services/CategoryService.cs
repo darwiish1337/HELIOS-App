@@ -11,35 +11,68 @@
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<CategoryDto>> GetCategoriesAsync()
+        public IEnumerable<CategoryForProblemAndUserDto> GetCategories()
         {
-            var categories = await _context.Categories.ToListAsync();
+            var categories = _context.Categories
+               .Select(c => new CategoryForProblemAndUserDto
+               {
+                   Id = c.Id,
+                   NameAR = c.NameAR,
+                   NameEN = c.NameEN,
+                   Problems = c.Problems.Select(p => new ProblemForCategoryDto
+                   {
+                       Id = p.Id,
+                       Name = p.Name,
+                       Description = p.Description,
+                       Status = p.Status,
+                       ProblemImg = p.ProblemImg,
+                       CreatedDate = p.CreatedDate,
+                       CategoryId = p.CategoryId,
+                       User = new UserForGetProblemDto
+                       {
+                           Id = p.User.Id,
+                           FirstName = p.User.FirstName,
+                           LastName = p.User.LastName,
+                           DisplayName = p.User.DisplayName,
+                           ProfilePicture = p.User.ProfilePicture
+                       }
+                   }).ToList()
+               })
+               .ToList();
 
-            return _mapper.Map<IEnumerable<CategoryDto>>(categories);
+            return categories;
         }
-
-        public IEnumerable<Category> GetCategories()
+        public async Task<IEnumerable<CategoryForProblemAndUserDto>> GetProblemByCategoryId(int id)
         {
-            return _context.Categories.AsNoTracking().ToList();
-        }
+            var categories = await _context.Categories
+               .Where(c => c.Id == id)
+               .Select(c => new CategoryForProblemAndUserDto
+               {
+                   Id = c.Id,
+                   NameAR = c.NameAR,
+                   NameEN = c.NameEN,
+                   Problems = c.Problems.Select(p => new ProblemForCategoryDto
+                   {
+                       Id = p.Id,
+                       Name = p.Name,
+                       Description = p.Description,
+                       Status = p.Status,
+                       ProblemImg = p.ProblemImg,
+                       CreatedDate = p.CreatedDate,
+                       CategoryId = p.CategoryId,
+                       User = new UserForGetProblemDto
+                       {
+                           Id = p.User.Id,
+                           FirstName = p.User.FirstName,
+                           LastName = p.User.LastName,
+                           DisplayName = p.User.DisplayName,
+                           ProfilePicture = p.User.ProfilePicture
+                       }
+                   }).ToList()
+               })
+               .ToListAsync();
 
-        public async Task<IEnumerable<CategoryDto>> GetCategoriesByIdAsync(int id)
-        {
-            var category = await _context.Categories.FindAsync(id);
-
-            return category != null ? new[] { _mapper.Map<CategoryDto>(category) } : Enumerable.Empty<CategoryDto>();
-        }
-            
-        public async Task<IEnumerable<Problems>> GetProblemsForCategoryAsync(int categoryId)
-        {
-            var category = await _context.Categories.FindAsync(categoryId);
-
-            var problems = await _context.Problems
-                .Where(p => p.CategoryId == categoryId)
-                .OrderByDescending(p => p.CreatedDate)
-                .ToListAsync();
-
-            return problems;
+            return categories;
         }
     }
 }

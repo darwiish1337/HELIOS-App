@@ -19,7 +19,7 @@
         {
             var user = await _userManager.FindByIdAsync(id);
 
-            if (user == null)
+            if (user is null)
                 throw new NotFoundException("User not found");
 
             if (!(await _userManager.CheckPasswordAsync(user, changePasswordDto.CurrentPassword)))
@@ -94,29 +94,76 @@
                 user.LastName = profileDto.LastName;
 
             if (profileDto.UserType != null)
-                user.UserType = profileDto.UserType;
-
-            var currentCover = user.ProfilePicture;
-            if (currentCover != null && _imagesPath != null)
             {
-                user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
-                var cover = Path.Combine(_imagesPath, currentCover);
-                File.Delete(cover);
+                user.UserType = profileDto.UserType; // Update UserType
+
+                if (user.UserType != profileDto.UserType) // Check if UserType has changed
+                {
+                    // Remove old role
+                    var oldRole = await _userManager.GetRolesAsync(user);
+                    await _userManager.RemoveFromRolesAsync(user, oldRole);
+
+                    // Add new role based on UserType
+                    var newRole = GetNewRoleBasedOnUserType(profileDto.UserType.ToString());
+                    await _userManager.AddToRoleAsync(user, newRole);
+                }
+
+                if (profileDto.Job != null)
+                    user.Job = profileDto.Job;
+
+                // Handle job field based on UserType
+                if (profileDto.UserType == RoleConstants.Factor)
+                {
+                    if (string.IsNullOrEmpty(user.Job))
+                    {
+                        // Job is required for Factor UserType
+                        throw new ValidationException("Job is required for Factor UserType");
+                    }
+                }
+                else if (profileDto.UserType == RoleConstants.Customer)
+                {
+                    user.Job = null; // Delete job for Customer UserType
+                }
             }
-            else
+
+            if (profileDto.ProfilePicture != null)
             {
-                user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
+                var currentCover = user.ProfilePicture;
+                if (currentCover != null && _imagesPath != null)
+                {
+                    user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
+                    var cover = Path.Combine(_imagesPath, currentCover);
+                    File.Delete(cover);
+                }
+                else
+                {
+                    user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
+                }
             }
 
-            var effectdRows = _context.SaveChanges();
+            var effectedRows = await _context.SaveChangesAsync();
 
-            if (effectdRows > 0)
+            if (effectedRows > 0)
             {
                 return user;
             }
             else
             {
                 return null;
+            }
+        }
+
+        // method to get new role based on UserType
+        private string GetNewRoleBasedOnUserType(string userType)
+        {
+            switch (userType)
+            {
+                case "Customer":
+                    return "Customer";
+                case "Factor":
+                    return "Factor";
+                default:
+                    throw new ArgumentException("Invalid UserType", nameof(userType));
             }
         }
 

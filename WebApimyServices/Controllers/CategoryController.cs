@@ -11,15 +11,6 @@
             _categoryService = categoryService;
         }
 
-        // Get All Categories
-        [HttpGet]
-        public async Task<ActionResult> GetCategories()
-        {
-            var results = await _categoryService.GetCategoriesAsync();
-
-            return Ok(results);
-        }
-
         // Get All Categories With Problems
         [HttpGet]
         public IActionResult GetCategoriesWithProblem()
@@ -31,23 +22,14 @@
 
         // Get All Categories By Id
         [HttpGet]
-        public async Task<ActionResult> GetCategoriesById(int id)
+        public async Task<ActionResult> GetProblemByCategoryId(int id)
         {
-            var results = await _categoryService.GetCategoriesByIdAsync(id);
+            var results = await _categoryService.GetProblemByCategoryId(id);
 
             if (!results.Any())
                 return NotFound();
 
             return Ok(results);
-        }
-
-        // Get Problems With Category
-        [HttpGet]
-        public async Task<ActionResult> GetProblemWithCategories(int categoryId)
-        {
-            var result = await _categoryService.GetProblemsForCategoryAsync(categoryId);
-
-            return Ok(result);
         }
     }
 }

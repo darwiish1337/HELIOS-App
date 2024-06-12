@@ -31,7 +31,7 @@
         [HttpGet]
         public async Task<ActionResult> GetProblems()
         {
-            var results = await _problemService.GetProblemsAsync();
+            var results = _problemService.GetProblemsAsync();
 
             return Ok(results);
         }
@@ -100,7 +100,7 @@
             return BadRequest("Problem Still Running !");
         }
 
-        //Search Problem
+        // Seacrh Problem
         [HttpGet("{query}")]
         public async Task<IActionResult> SearchProblems(string query)
         {

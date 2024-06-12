@@ -26,33 +26,85 @@
                 ProblemImg = coverName,
                 UserId = problemsDto.UserId,
                 CategoryId = problemsDto.CategoryId,
-                Status = problemsDto.Status,
             };
 
             await _context.AddAsync(problem);
             _context.SaveChanges();
         }
 
-        public async Task<IEnumerable<ProblemsDto>> GetProblemsAsync()
+        public IEnumerable<ProblemSharedDto> GetProblemsAsync()
         {
-            var problems = await _context.Problems.ToListAsync();
+            var problems = _context.Problems
+               .Select(p => new ProblemSharedDto
+               {
+                   Id = p.Id,
+                   Name = p.Name,
+                   Description = p.Description,
+                   Status = p.Status,
+                   ProblemImg = p.ProblemImg,
+                   CreatedDate = p.CreatedDate,
+                   UserId= p.UserId,
+                   CategoryId = p.CategoryId,
+                   Category = new CategoryForProblemDto
+                   {
+                       Id = p.Category.Id,
+                       NameAR = p.Category.NameAR,
+                       NameEN = p.Category.NameEN
+                   },
+                   User = new UserForGetProblemDto
+                   {
+                       Id = p.User.Id,
+                       FirstName = p.User.FirstName,
+                       LastName = p.User.LastName,
+                       DisplayName = p.User.DisplayName,
+                       ProfilePicture = p.User.ProfilePicture,
+                   }
+               })
+               .ToList();
 
-            return _mapper.Map<IEnumerable<ProblemsDto>>(problems);
+            return problems;
         }
 
-        public async Task<IEnumerable<ProblemsDto>> GetProblemsByIdAsync(int id)
+        public async Task<IEnumerable<ProblemSharedDto>> GetProblemsByIdAsync(int id)
         {
-            var problems = await _context.Problems.FindAsync(id);
+            var problems = await _context.Problems
+               .Where(c => c.Id == id)
+               .Select(p => new ProblemSharedDto
+               {
+                   Id = p.Id,
+                   Name = p.Name,
+                   Description = p.Description,
+                   Status = p.Status,
+                   ProblemImg = p.ProblemImg,
+                   CreatedDate = p.CreatedDate,
+                   UserId = p.UserId,
+                   CategoryId = p.CategoryId,
+                   Category = new CategoryForProblemDto
+                   {
+                       Id = p.Category.Id,
+                       NameAR = p.Category.NameAR,
+                       NameEN = p.Category.NameEN
+                   },
+                   User = new UserForGetProblemDto
+                   {
+                       Id = p.User.Id,
+                       FirstName = p.User.FirstName,
+                       LastName = p.User.LastName,
+                       DisplayName = p.User.DisplayName,
+                       ProfilePicture = p.User.ProfilePicture,
+                   }
+               })
+               .ToListAsync();
 
-            return problems != null ? new[] { _mapper.Map<ProblemsDto>(problems) } : Enumerable.Empty<ProblemsDto>();
+            return problems;
         }
 
-        public async Task<IEnumerable<ProblemWithUserWithCategoryDto>> SearchAsync(string query)
+        public async Task<IEnumerable<ProblemSearchDto>> SearchAsync(string query)
         {
             var problems = await _context.Problems
              .Where(x => x.Name.Contains(query) || x.Description.Contains(query))
              .OrderBy(c => c.CreatedDate)
-             .Select(u => new ProblemWithUserWithCategoryDto
+             .Select(u => new ProblemSearchDto
              {
                  Id = u.Id,
                  Name = u.Name,

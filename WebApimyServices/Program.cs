@@ -51,6 +51,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("cs"));
 });
 
+
 // [Authoriz] use JWT Token In Check Authanttiaction
 var jwtOptions = builder.Configuration.GetSection("JWT").Get<JwtOptions>();
 
@@ -106,14 +107,8 @@ builder.Services.AddSwaggerGen(service =>
     service.SwaggerDoc("v1", new OpenApiInfo()
     {
         Version = "v1",
-        Title = "WebApiDemo",
-        Description = "To Contact With ",
-        Contact = new OpenApiContact()
-        {
-            Name = "Mohamed Darwish",
-            Email = "mdarwiish009@gmail.com\r\n",
-            Url = new Uri("https://mail.google.com/mail/u/0/?hl=ar#inbox?compose=new")
-        }
+        Title = "myService Application APIs",
+        Description = "API Documentation For myService Project"
     });
 
     service.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()

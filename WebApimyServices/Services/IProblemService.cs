@@ -4,8 +4,8 @@
     {
          Task Create(ProblemsDto problemsDto);
          Task<Problems?> Update(ProblemsUpdateDto problemsDto);
-         Task<IEnumerable<ProblemWithUserWithCategoryDto>> SearchAsync(string query);
-         Task<IEnumerable<ProblemsDto>> GetProblemsAsync();
-         Task<IEnumerable<ProblemsDto>> GetProblemsByIdAsync(int id);
+         Task<IEnumerable<ProblemSearchDto>> SearchAsync(string query);
+         IEnumerable<ProblemSharedDto> GetProblemsAsync();
+         Task<IEnumerable<ProblemSharedDto>> GetProblemsByIdAsync(int id);
     }
 }

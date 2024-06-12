@@ -1,6 +1,6 @@
 ﻿namespace WebApimyServices.Dto
 {
-    public class ProblemWithUserWithCategoryDto
+    public class ProblemSearchDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
