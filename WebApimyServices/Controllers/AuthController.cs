@@ -1,5 +1,11 @@
 ﻿namespace WebApimyServices.Controllers
 {
+    /// <summary>
+    /// Controller for managing authentication and authorization.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints for user registration, login, token refresh, token revocation, email confirmation, password reset, and logout.
+    /// </remarks>
     [Route("[controller]/[action]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -19,7 +25,11 @@
             _jwtUtils = jwtUtils;
         }
 
-        //Create Account (Factor - Registration)
+        /// <summary>
+        /// Creates a new account for a factor (registration).
+        /// </summary>
+        /// <param name="registertionFactorDto">The registration data.</param>
+        /// <returns>A JSON response with the authentication result.</returns>
         [HttpPost]
         public async Task<IActionResult> FactorRegisttration(RegistertionFactorDto registertionFactorDto)
         {
@@ -55,7 +65,11 @@
             return BadRequest(result.Message);
         }
 
-        //Create Account (Customer - Registration)
+        /// <summary>
+        /// Creates a new account for a customer (registration).
+        /// </summary>
+        /// <param name="customerDto">The customer registration data.</param>
+        /// <returns>A JSON response with the authentication result.</returns>
         [HttpPost]
         public async Task<IActionResult> CustomerRegisttration(RegistertionCustomerDto customerDto)
         {
@@ -91,7 +105,11 @@
             return BadRequest(result.Message);
         }
 
-        //Login
+        /// <summary>
+        /// Logs in a user.
+        /// </summary>
+        /// <param name="loginUserDto">The login credentials.</param>
+        /// <returns>A JSON response with the authentication result.</returns>
         [HttpPost]
         public async Task<IActionResult> Login([FromBody]LoginUserDto loginUserDto)
         {
@@ -109,7 +127,10 @@
             return Ok(result);
         }
 
-        //Refresh Token
+        /// <summary>
+        /// Refreshes a token.
+        /// </summary>
+        /// <returns>A JSON response with the refreshed token.</returns>
         [HttpGet]
         public async Task<IActionResult> RefreshToken()
         {
@@ -125,7 +146,11 @@
             return Ok(result);
         }
 
-        //Revoke Token
+        /// <summary>
+        /// Revokes a token.
+        /// </summary>
+        /// <param name="revokeTokenDto">The token to revoke.</param>
+        /// <returns>A JSON response indicating the revocation result.</returns>
         [HttpPost]
         public async Task<IActionResult> RevokeToken([FromBody]RevokeTokenDto revokeTokenDto)
         {
@@ -158,7 +183,12 @@
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
 
-        //Confirm Email
+        /// <summary>
+        /// Confirms an email address.
+        /// </summary>
+        /// <param name="email">The email address to confirm.</param>
+        /// <param name="code">The confirmation code.</param>
+        /// <returns>A JSON response indicating the confirmation result.</returns>
         [HttpGet]
         public async Task<IActionResult> ConfirmEmail(string email, string code)
         {
@@ -177,7 +207,11 @@
                 return BadRequest("There Are Errors While Confirming Your Email.");
         }
 
-        //Send Email & Generate Reset Password Token
+        /// <summary>
+        /// Sends a password reset email.
+        /// </summary>
+        /// <param name="resetPasswordDto">The password reset data.</param>
+        /// <returns>A JSON response indicating the email sending result.</returns>
         [HttpPost]
         public async Task<IActionResult> SendForgetPasswordEmail(ResetPasswordDto resetPassword)
         {
@@ -197,7 +231,11 @@
             return Ok("Please Check Your Email To Aprove Reset Password.");
         }
 
-        //Resend Reset Password Email
+        /// <summary>
+        /// Resends a password reset email.
+        /// </summary>
+        /// <param name="resetPasswordDto">The password reset data.</param>
+        /// <returns>A JSON response indicating the email sending result.</returns>
         [HttpPost]
         public async Task<IActionResult> ResendForgetPasswordEmail(ResetPasswordDto resetPassword)
         {
@@ -217,7 +255,14 @@
             return Ok("Please Check Your Email To Aprove Reset Password.");
         }
 
-        //Reset Password
+        /// <summary>
+        /// Resets a password.
+        /// </summary>
+        /// <param name="token">The password reset token.</param>
+        /// <param name="email">The email address associated with the password reset.</param>
+        /// <param name="newPassword">The new password.</param>
+        /// <param name="confirmPassword">The confirmed new password.</param>
+        /// <returns>A JSON response indicating the password reset result.</returns>
         [HttpPost]
         public async Task<IActionResult> ConfirmResetPassword(string token, string email, string newPassword, string confirmPassword)
         {
@@ -247,7 +292,10 @@
               return BadRequest(result.Errors);
         }
 
-        //Logout
+        /// <summary>
+        /// Logs out a user.
+        /// </summary>
+        /// <returns>A JSON response indicating the logout result.</returns>
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Logout()

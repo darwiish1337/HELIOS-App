@@ -122,7 +122,15 @@
                 }
                 else if (profileDto.UserType == RoleConstants.Customer)
                 {
-                    user.Job = null; // Delete job for Customer UserType
+                    // Delete job for Customer UserType
+                    user.Job = null;
+
+                    // Check if user has problems and delete if true
+                    if (user.Problems.Any())
+                    {
+                        _context.Problems.RemoveRange(user.Problems);
+                        await _context.SaveChangesAsync();
+                    }
                 }
             }
 
@@ -167,6 +175,7 @@
             }
         }
 
+        // method to save img
         private async Task<string> SaveImg(IFormFile Img)
         {
             var coverName = $"{Guid.NewGuid()}{Path.GetExtension(Img.FileName)}";
@@ -179,10 +188,10 @@
             return coverName;
         }
 
+        // method to expection not found
         private class NotFoundException : Exception
         {
             public NotFoundException(string message) : base(message) { }
         }
-
     }
 }
