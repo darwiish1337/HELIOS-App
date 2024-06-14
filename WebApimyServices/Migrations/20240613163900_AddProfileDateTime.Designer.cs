@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240613163900_AddProfileDateTime")]
+    partial class AddProfileDateTime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -199,18 +202,12 @@ namespace WebApimyServices.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<DateTime?>("LastFirstnameUpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("LastLastnameUpdateDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<DateTime?>("LastUserTypeUpdateDate")
+                    b.Property<DateTime?>("LastProfileUpdateDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("LockoutEnabled")

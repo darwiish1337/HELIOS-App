@@ -38,34 +38,53 @@
             return true;
         }
 
-        public IEnumerable<UserDto> GetUsersWithProblems()
+        public IEnumerable<UserDto> GetUserInCustomerRoleWithProblems()
         {
-            var users =  _context.Users
-                        .Where(e => e.EmailConfirmed)
-                        .Select(u => new UserDto
-                     {
-                        Id = u.Id,
-                        FirstName = u.FirstName,
-                        LastName = u.LastName,
-                        UserType = u.UserType,
-                        PhoneNumber = u.PhoneNumber,
-                        DisplayName = u.DisplayName,
-                        CityId = u.CityId,
-                        CreatedDate = u.CreatedDate,
-                        Job = u.Job,
-                        ProfilePicture = u.ProfilePicture,
-                        Email = u.Email,
-                        Problems = u.Problems.Select(p => new ProblemDto
-                        {
-                            Id = p.Id,
-                            Name = p.Name,
-                            ProblemImg = p.ProblemImg,
-                            Description = p.Description,
-                            Status = p.Status,
-                            CreatedDate = p.CreatedDate,
-                            CategoryId = p.CategoryId
-                        }).ToList()
-                        }).ToList();
+            var users = _userManager.GetUsersInRoleAsync(RoleConstants.Customer).Result
+                          .Select(u => new UserDto
+                          {
+                              Id = u.Id,
+                              FirstName = u.FirstName,
+                              LastName = u.LastName,
+                              UserType = u.UserType,
+                              PhoneNumber = u.PhoneNumber,
+                              DisplayName = u.DisplayName,
+                              CityId = u.CityId,
+                              CreatedDate = u.CreatedDate,
+                              Job = u.Job,
+                              ProfilePicture = u.ProfilePicture,
+                              Email = u.Email,
+                              Problems = u.Problems.Select(p => new ProblemDto
+                              {
+                                  Id = p.Id,
+                                  Name = p.Name,
+                                  ProblemImg = p.ProblemImg,
+                                  Description = p.Description,
+                                  Status = p.Status,
+                                  CreatedDate = p.CreatedDate,
+                                  CategoryId = p.CategoryId
+                              }).ToList()
+                          }).ToList();
+            return users;
+        }
+
+        public IEnumerable<UserDto> GetUserInFactorRole()
+        {
+            var users = _userManager.GetUsersInRoleAsync(RoleConstants.Factor).Result
+                          .Select(u => new UserDto
+                          {
+                              Id = u.Id,
+                              FirstName = u.FirstName,
+                              LastName = u.LastName,
+                              UserType = u.UserType,
+                              PhoneNumber = u.PhoneNumber,
+                              DisplayName = u.DisplayName,
+                              CityId = u.CityId,
+                              CreatedDate = u.CreatedDate,
+                              Job = u.Job,
+                              ProfilePicture = u.ProfilePicture,
+                              Email = u.Email
+                          }).ToList();
             return users;
         }
 
@@ -80,85 +99,63 @@
             return (IEnumerable<ApplicationUser>)users;
         }
 
-        public async Task<ApplicationUser?> Update(ProfileDto profileDto)
+        public async Task<UpdateResult> Update(ProfileDto profileDto)
         {
-            var user = _context.Users.Find(profileDto.Id);
+            var user = await _context.Users.FindAsync(profileDto.Id);
 
             if (user is null)
-                return null;
+                return new UpdateResult { Success = false, ErrorMessages = new List<string> { "User not found." } };
 
+            var now = DateTime.UtcNow;
+            var hasChanges = false;
+
+            List<string> errorMessages;
+            Dictionary<string, int> daysUntilNextUpdate;
+
+            if (ShouldUpdateProfile(user, profileDto, now, out errorMessages, out daysUntilNextUpdate))
+            {
+                return new UpdateResult { Success = false, ErrorMessages = errorMessages, DaysUntilNextUpdate = daysUntilNextUpdate };
+            }
+
+            // Update user properties
             if (profileDto.FirstName != null)
+            {
                 user.FirstName = profileDto.FirstName;
+                user.LastFirstnameUpdateDate = now; // Update LastFirstnameUpdateDate
+                hasChanges = true;
+            }
 
             if (profileDto.LastName != null)
+            {
                 user.LastName = profileDto.LastName;
+                user.LastLastnameUpdateDate = now; // Update LastLastnameUpdateDate
+                hasChanges = true;
+            }
 
             if (profileDto.UserType != null)
             {
-                user.UserType = profileDto.UserType; // Update UserType
-
-                if (user.UserType != profileDto.UserType) // Check if UserType has changed
+                if (user.UserType != profileDto.UserType)
                 {
-                    // Remove old role
-                    var oldRole = await _userManager.GetRolesAsync(user);
-                    await _userManager.RemoveFromRolesAsync(user, oldRole);
-
-                    // Add new role based on UserType
-                    var newRole = GetNewRoleBasedOnUserType(profileDto.UserType.ToString());
-                    await _userManager.AddToRoleAsync(user, newRole);
+                    user.LastUserTypeUpdateDate = now; // Update LastUserTypeUpdateDate
                 }
+                user.UserType = profileDto.UserType;
+                hasChanges = true;
 
-                if (profileDto.Job != null)
-                    user.Job = profileDto.Job;
-
-                // Handle job field based on UserType
-                if (profileDto.UserType == RoleConstants.Factor)
-                {
-                    if (string.IsNullOrEmpty(user.Job))
-                    {
-                        // Job is required for Factor UserType
-                        throw new ValidationException("Job is required for Factor UserType");
-                    }
-                }
-                else if (profileDto.UserType == RoleConstants.Customer)
-                {
-                    // Delete job for Customer UserType
-                    user.Job = null;
-
-                    // Check if user has problems and delete if true
-                    if (user.Problems.Any())
-                    {
-                        _context.Problems.RemoveRange(user.Problems);
-                        await _context.SaveChangesAsync();
-                    }
-                }
+                await UpdateUserTypeAsync(user, profileDto);
             }
 
             if (profileDto.ProfilePicture != null)
             {
-                var currentCover = user.ProfilePicture;
-                if (currentCover != null && _imagesPath != null)
-                {
-                    user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
-                    var cover = Path.Combine(_imagesPath, currentCover);
-                    File.Delete(cover);
-                }
-                else
-                {
-                    user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
-                }
+                user.ProfilePicture = await SaveImg(profileDto.ProfilePicture!);
+                hasChanges = true;
             }
 
-            var effectedRows = await _context.SaveChangesAsync();
+            if (hasChanges)
+            {
+                await _context.SaveChangesAsync();
+            }
 
-            if (effectedRows > 0)
-            {
-                return user;
-            }
-            else
-            {
-                return null;
-            }
+            return new UpdateResult { Success = true, User = user };
         }
 
         // method to get new role based on UserType
@@ -192,6 +189,91 @@
         private class NotFoundException : Exception
         {
             public NotFoundException(string message) : base(message) { }
+        }
+
+        // method to check if user can update profile or not
+        private bool ShouldUpdateProfile(ApplicationUser user, ProfileDto profileDto, DateTime now, out List<string> errorMessages, out Dictionary<string, int> daysUntilNextUpdate)
+        {
+            errorMessages = new List<string>();
+            daysUntilNextUpdate = new Dictionary<string, int>();
+
+            // FirstName and LastName updates
+            var lastFirstnameUpdateDate = user.LastFirstnameUpdateDate ?? DateTime.MinValue;
+            var daysSinceLastFirstnameUpdate = (now - lastFirstnameUpdateDate).Days;
+
+            var lastLastnameUpdateDate = user.LastLastnameUpdateDate ?? DateTime.MinValue;
+            var daysSinceLastLastnameUpdate = (now - lastLastnameUpdateDate).Days;
+
+            if ((profileDto.FirstName != null && user.FirstName != profileDto.FirstName) ||
+                (profileDto.LastName != null && user.LastName != profileDto.LastName))
+            {
+                if (profileDto.FirstName != null && user.FirstName != profileDto.FirstName && daysSinceLastFirstnameUpdate < 10)
+                {
+                    errorMessages.Add("Firstname can only be changed every 5 days.");
+                    daysUntilNextUpdate.Add("Firstname",10 - daysSinceLastFirstnameUpdate);
+                }
+                if (profileDto.LastName != null && user.LastName != profileDto.LastName && daysSinceLastLastnameUpdate < 10)
+                {
+                    errorMessages.Add("Lastname can only be changed every 5 days.");
+                    daysUntilNextUpdate.Add($"Lastname", 10 - daysSinceLastLastnameUpdate);
+                }
+            }
+
+            // UserType updates
+            var lastUserTypeUpdateDate = user.LastUserTypeUpdateDate ?? DateTime.MinValue;
+            var daysSinceLastUserTypeUpdate = (now - lastUserTypeUpdateDate).Days;
+
+            if (profileDto.UserType != null && user.UserType != profileDto.UserType)
+            {
+                if (daysSinceLastUserTypeUpdate < 30)
+                {
+                    errorMessages.Add("UserType can only be changed every 15 days.");
+                    daysUntilNextUpdate.Add("UserType", 30 - daysSinceLastUserTypeUpdate);
+                }
+            }
+
+            return errorMessages.Count > 0;
+        }
+
+        // method to update user
+        private async Task UpdateUserTypeAsync(ApplicationUser user, ProfileDto profileDto)
+        {
+            if (user.UserType != profileDto.UserType)
+            {
+                // Remove old role
+                var oldRole = await _userManager.GetRolesAsync(user);
+                await _userManager.RemoveFromRolesAsync(user, oldRole);
+
+                // Add new role based on UserType
+                var newRole = GetNewRoleBasedOnUserType(profileDto.UserType.ToString());
+                await _userManager.AddToRoleAsync(user, newRole);
+            }
+
+            if (profileDto.Job != null)
+            {
+                user.Job = profileDto.Job;
+            }
+
+            // Handle job field based on UserType
+            if (profileDto.UserType == RoleConstants.Factor)
+            {
+                if (string.IsNullOrEmpty(user.Job))
+                {
+                    throw new ValidationException("Job is required for Factor UserType");
+                }
+            }
+            else if (profileDto.UserType == RoleConstants.Customer)
+            {
+                // Delete job for Customer UserType
+                user.Job = null;
+
+                // Check if user has problems and delete if true
+                if (user.Problems.Any())
+                {
+                    _context.Problems.RemoveRange(user.Problems);
+                    await _context.SaveChangesAsync();
+                }
+            }
         }
     }
 }

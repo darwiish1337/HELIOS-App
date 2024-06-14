@@ -1,5 +1,3 @@
-using System.Reflection;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Services to the container.
@@ -47,6 +45,19 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(services =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// Reset Token Life 1 Hour
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(1);
+});
+
+// Identity Provider
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Tokens.PasswordResetTokenProvider = "Email";
+    options.Tokens.EmailConfirmationTokenProvider = "Email";
+});
+
 // DBContext Connection
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -74,12 +85,6 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecurityKey))
     };
-});
-
-// Reset Token Life 1 Hour
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
-{
-    options.TokenLifespan = TimeSpan.FromHours(1);
 });
 
 // Add Custom Cors

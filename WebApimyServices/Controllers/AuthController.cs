@@ -210,7 +210,7 @@
         /// <summary>
         /// Sends a password reset email.
         /// </summary>
-        /// <param name="resetPasswordDto">The password reset data.</param>
+        /// <param name="ResetPasswordDto">The password reset data.</param>
         /// <returns>A JSON response indicating the email sending result.</returns>
         [HttpPost]
         public async Task<IActionResult> SendForgetPasswordEmail(ResetPasswordDto resetPassword)
@@ -221,14 +221,19 @@
             var user = await _userManager.FindByEmailAsync(resetPassword.Email);
 
             if (user is null || !(await _userManager.IsEmailConfirmedAsync(user)))
-                return BadRequest("Account May Be Not Found Or Not Confirmed !");
+                return BadRequest("Account May Be Not Found Or Not Confirmed!");
 
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var verificationCode = await _userManager.GenerateUserTokenAsync(user, "Email", "ResetPassword");
 
             await _emailService.SendEmailAsync(mailTo: user.Email, "Reset Your Password",
-                $"Reset Your Password By <a href='{HtmlEncoder.Default.Encode($"https://muhameddarwish-001-site1.ftempurl.com/ResetPassword/html/ConfirmResetPassword.html?email={user.Email}&token={token.ToBase64()}")}'>clicking here</a>.");
+                $"Dear {user.UserName},<br><br>" +
+                $"We have received a request to reset your password. If you did not make this request, please ignore this email.<br><br>" +
+                $"To reset your password, please enter the following code: <b>{verificationCode}</b>.<br><br>" +
+                $"If you have any questions or concerns, please don't hesitate to contact us.<br><br>" +
+                $"Best regards,<br>" +
+                $"[Service App Team]");
 
-            return Ok("Please Check Your Email To Aprove Reset Password.");
+            return Ok("Please Check Your Email To Get The Verification Code.");
         }
 
         /// <summary>
@@ -245,14 +250,19 @@
             var user = await _userManager.FindByEmailAsync(resetPassword.Email);
 
             if (user is null || !(await _userManager.IsEmailConfirmedAsync(user)))
-                return BadRequest("Account May Be Not Found Or Not Confirmed !");
+                return BadRequest("Account May Be Not Found Or Not Confirmed!");
 
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var verificationCode = await _userManager.GenerateUserTokenAsync(user, "Email", "ResetPassword");
 
             await _emailService.SendEmailAsync(mailTo: user.Email, "Reset Your Password",
-                $"Reset Your Password By <a href='{HtmlEncoder.Default.Encode($"https://muhameddarwish-001-site1.ftempurl.com/ResetPassword/html/ConfirmResetPassword.html?email={user.Email}&token={token.ToBase64()}")}'>clicking here</a>.");
+                $"Dear {user.UserName},<br><br>" +
+                $"We have received a request to reset your password. If you did not make this request, please ignore this email.<br><br>" +
+                $"To reset your password, please enter the following code: <b>{verificationCode}</b>.<br><br>" +
+                $"If you have any questions or concerns, please don't hesitate to contact us.<br><br>" +
+                $"Best regards,<br>" +
+                $"[Service App Team]");
 
-            return Ok("Please Check Your Email To Aprove Reset Password.");
+            return Ok("Please Check Your Email To Get The Verification Code.");
         }
 
         /// <summary>
@@ -264,32 +274,28 @@
         /// <param name="confirmPassword">The confirmed new password.</param>
         /// <returns>A JSON response indicating the password reset result.</returns>
         [HttpPost]
-        public async Task<IActionResult> ConfirmResetPassword(string token, string email, string newPassword, string confirmPassword)
+        public async Task<IActionResult> ResetPassword(ResetPasswordWithCodeDto resetPassword)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.Values.ToList());
+
+            var user = await _userManager.FindByEmailAsync(resetPassword.Email);
 
             if (user is null || !(await _userManager.IsEmailConfirmedAsync(user)))
                 return BadRequest("Account May Be Not Found Or Not Confirmed !");
 
-            if (newPassword.IsNullOrEmpty() && newPassword.IsNullOrEmpty())
+            if (resetPassword.NewPassword.IsNullOrEmpty() && resetPassword.ConfirmNewPassword.IsNullOrEmpty())
                 return BadRequest("You must enter New Password & Confirm Password !");
 
-            if (newPassword != confirmPassword)
+            if (resetPassword.NewPassword != resetPassword.ConfirmNewPassword)
                 return BadRequest("Confirm Password not exist With New Password !");
 
-            // Decode the token from Base64
-            var decodedToken = Convert.FromBase64String(token);
+            var result = await _userManager.ResetPasswordAsync(user, resetPassword.Code, resetPassword.NewPassword);
 
-            // Convert the decoded token to a string
-            var tokenString = Encoding.UTF8.GetString(decodedToken);
+            if (!result.Succeeded)
+                return BadRequest("Failed to reset password.");
 
-            var result = await _userManager.ResetPasswordAsync(user, tokenString, newPassword);
-
-            if (result.Succeeded)
-            {
-              return Ok("Password Reseted SuccessFully");
-            }
-              return BadRequest(result.Errors);
+            return Ok("Password reset successfully.");
         }
 
         /// <summary>

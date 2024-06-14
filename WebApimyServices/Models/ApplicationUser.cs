@@ -8,6 +8,9 @@
         public string UserType { get; set; } 
         public string? Job { get; set; }
         public string? ProfilePicture { get; set; }
+        public DateTime? LastFirstnameUpdateDate { get; set; }
+        public DateTime? LastLastnameUpdateDate { get; set; }
+        public DateTime? LastUserTypeUpdateDate { get; set; }
         public DateTime CreatedDate { get; set; }
         public virtual ICollection<Problems> Problems { get; set; } = new List<Problems>();
         public virtual ICollection<RefreshToken>? RefreshTokens { get; set; } = new List<RefreshToken>();

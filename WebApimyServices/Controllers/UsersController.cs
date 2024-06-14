@@ -8,7 +8,7 @@
     /// </remarks>
     [Route("[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -103,24 +103,25 @@
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsersInFactorRole()
         {
-            var users = await _userManager.GetUsersInRoleAsync(RoleConstants.Factor);
+            var users = _userService.GetUserInFactorRole();
+
+            if (!users.Any())
+            {
+                return NotFound();
+            }
 
             return Ok(users);
         }
 
         /// <summary>
-        /// Retrieves a list of users with problems.
+        /// Retrieves a list of users in the Customer role with their associated problems.
         /// </summary>
-        /// <remarks>
-        /// This endpoint returns a list of users who have unresolved problems or issues.
-        /// </remarks>
-        /// <response code="200">Returns a list of users with problems.</response>
-        /// <response code="404">No users with problems found.</response>
+        /// <returns>A list of <see cref="UserDto"/> objects, each containing a user's details and their associated problems.</returns>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUsersWithProblems()
+        public async Task<IActionResult> GetUserInCustomerRole()
         {
-            var users = _userService.GetUsersWithProblems();
+            var users = _userService.GetUserInCustomerRoleWithProblems();
 
             if (!users.Any())
             {

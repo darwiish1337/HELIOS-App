@@ -32,4 +32,6 @@ global using WebApimyServices.Configurations;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;
 global using WebApimyServices.Seeding;
 global using Microsoft.AspNetCore.Authentication;
+global using WebApimyServices.Helpers;
+global using System.Reflection;
 
