@@ -4,6 +4,11 @@
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {}
+
+        public ApplicationDbContext()
+        {
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -14,6 +19,7 @@
             builder.ApplyConfiguration(new CategoryConfiguration());
             builder.ApplyConfiguration(new ProblemConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
+            builder.ApplyConfiguration(new RateConfiguration());
             #endregion
 
             #region RenameTables
@@ -42,6 +48,7 @@
         public DbSet<City> Cities { get; set; }
         public DbSet<Governorate> Governorates { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Rate> Rates { get; set; }
         #endregion
     }
 }

@@ -111,6 +111,7 @@ builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(service =>
 {
+    // Add XML Files
     service.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,$"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 
     service.SwaggerDoc("v1", new OpenApiInfo()
@@ -146,6 +147,29 @@ builder.Services.AddSwaggerGen(service =>
         } });
 });
 
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+// Configure Hangfire
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("cs"), new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.Zero,
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true
+    }));
+
+builder.Services.AddHangfireServer();
+//builder.Services.AddSingleton<BackgroundJobClient>();
+builder.Services.AddScoped<HangfireService>();
+
 var app = builder.Build();
 
 app.UseSwagger();
@@ -168,6 +192,13 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseHangfireDashboard("/dashborad");
+
 app.MapControllers();
+
+RecurringJob.AddOrUpdate<HangfireService>(
+    "CheckAndRemoveUnconfirmedUsers",
+    service => service.CheckAndRemoveUnconfirmedUsers(),
+    Cron.HourInterval(5));
 
 app.Run();

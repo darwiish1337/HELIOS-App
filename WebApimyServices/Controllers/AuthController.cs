@@ -47,8 +47,82 @@
                 var callbackUrl = Url.Action("ConfirmEmail", "Auth",
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
-                await _emailService.SendEmailAsync(user.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>Clicking here</a>.");
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    "Confirm Your Email Address",
+                    @$"
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <title>Confirm Your Email</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+                margin: 0;
+                padding: 20px;
+            }}
+            .email-container {{
+                background-color: #ffffff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                max-width: 600px;
+                margin: auto;
+            }}
+            .email-header {{
+                text-align: center;
+                margin-bottom: 20px;
+            }}
+            .email-body {{
+                font-size: 16px;
+                line-height: 1.5;
+            }}
+            .email-footer {{
+                margin-top: 20px;
+                text-align: center;
+                font-size: 14px;
+                color: #888888;
+            }}
+            .button {{
+                display: inline-block;
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #ffffff;
+                background-color: #4CAF50; /* Button color */
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold; /* Make button text bold */
+                border: none;
+                cursor: pointer;
+                text-align: center;
+            }}
+            .button:hover {{
+                background-color: #45a049; /* Darker shade for hover effect */
+            }}
+        </style>
+    </head>
+    <body>
+        <div class='email-container'>
+            <div class='email-header'>
+                <h2>Welcome to Helios!</h2>
+            </div>
+            <div class='email-body'>
+                <p>Dear {user.DisplayName},</p>
+                <p>Thank you for registering with Helios. To complete your registration, please confirm your email address by clicking the button below:</p>
+                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Confirm Your Email</a></p>
+                <p>If you did not create an account with us, please ignore this email.</p>
+                <p>Thank you,<br>Helios Team</p>
+            </div>
+            <div class='email-footer'>
+                <p>© 2024 Helios. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ");
 
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
 
@@ -87,8 +161,85 @@
                 var callbackUrl = Url.Action("ConfirmEmail", "Auth",
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
-                await _emailService.SendEmailAsync(user.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    "Confirm Your Email Address",
+                    @$"
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <title>Confirm Your Email</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+                margin: 0;
+                padding: 20px;
+            }}
+            .email-container {{
+                background-color: #ffffff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                max-width: 600px;
+                margin: auto;
+            }}
+            .email-header {{
+                text-align: center;
+                margin-bottom: 20px;
+            }}
+            .email-body {{
+                font-size: 16px;
+                line-height: 1.5;
+            }}
+            .email-footer {{
+                margin-top: 20px;
+                text-align: center;
+                font-size: 14px;
+                color: #888888;
+            }}
+            .button {{
+                display: inline-block;
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #ffffff;
+                background-color: #4CAF50; /* Button color */
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold; /* Make button text bold */
+                border: none;
+                cursor: pointer;
+                text-align: center;
+            }}
+            .button:hover {{
+                background-color: #45a049; /* Darker shade for hover effect */
+            }}
+        </style>
+    </head>
+    <body>
+        <div class='email-container'>
+            <div class='email-header'>
+                <h2>Welcome to Helios!</h2>
+            </div>
+            <div class='email-body'>
+                <p>Dear {user.DisplayName},</p>
+                <p>Thank you for registering with Helios. To complete your registration, please confirm your email address by clicking the button below:</p>
+                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Confirm Your Email</a></p>
+                <p>If you did not create an account with us, please ignore this email.</p>
+                <p>Thank you,<br>Helios Team</p>
+            </div>
+            <div class='email-footer'>
+                <p>© 2024 Helios. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ");
+
+
+
 
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
 

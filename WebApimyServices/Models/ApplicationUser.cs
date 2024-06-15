@@ -14,6 +14,7 @@
         public DateTime CreatedDate { get; set; }
         public virtual ICollection<Problems> Problems { get; set; } = new List<Problems>();
         public virtual ICollection<RefreshToken>? RefreshTokens { get; set; } = new List<RefreshToken>();
+        public virtual ICollection<Rate> Rates { get; set; } = new List<Rate>();
         public int CityId { get; set; }
         public virtual City? City { get; set; } 
     }

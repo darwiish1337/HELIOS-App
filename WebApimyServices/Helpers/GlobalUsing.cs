@@ -34,4 +34,6 @@ global using WebApimyServices.Seeding;
 global using Microsoft.AspNetCore.Authentication;
 global using WebApimyServices.Helpers;
 global using System.Reflection;
+global using Hangfire;
+global using Hangfire.SqlServer;
 

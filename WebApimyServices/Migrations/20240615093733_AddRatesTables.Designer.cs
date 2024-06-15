@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240615093733_AddRatesTables")]
+    partial class AddRatesTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("ApplicationUserRate", (string)null);
+                    b.ToTable("ApplicationUserRate");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -308,7 +311,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
 
                     b.HasData(
                         new
@@ -633,7 +636,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Problems", (string)null);
+                    b.ToTable("Problems");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Rate", b =>
@@ -652,7 +655,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Rates", (string)null);
+                    b.ToTable("Rates");
                 });
 
             modelBuilder.Entity("ApplicationUserRate", b =>
@@ -729,7 +732,7 @@ namespace WebApimyServices.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsMany("WebApimyServices.Models.ApplicationUser.RefreshTokens#WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
