@@ -4,7 +4,7 @@
     {
         Task<UpdateResult> Update(ProfileDto profileDto);
         IEnumerable<UserDto> GetUserInCustomerRoleWithProblems();
-        IEnumerable<UserDto> GetUserInFactorRole();
+        IEnumerable<FactorDto> GetUserInFactorRole();
         IEnumerable<ApplicationUser> Search(string query);
         Task<bool> ChangePassowrd(ChangePasswordDto changePasswordDto, string id);
     }

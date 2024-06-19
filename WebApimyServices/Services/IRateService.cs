@@ -2,10 +2,9 @@
 {
     public interface IRateService
     {
-        Task<Rate[]> GetAllForUserAsync(string userId);
-        Task<Rate> GetByIdAsync(int id);
-        Task<Rate> CreateAsync(Rate model);
-        Task<Rate> UpdateAsync(Rate model);
-        Task<Rate> DeleteAsync(int id);
+        Task AddRateAsync(string customerId, string factorId, decimal ratingValue);
+        Task UpdateRateAsync(int rateId, decimal ratingValue);
+        Task DeleteRateAsync(int rateId);
+        Task<IEnumerable<Rate>> GetRatesForFactorAsync(string factorId);
     }
 }

@@ -4,7 +4,6 @@
     private readonly IEmailService _emailService;
     private readonly ILogger<HangfireService> _logger;
 
-
     public HangfireService(ApplicationDbContext dbContext, IEmailService emailService, ILogger<HangfireService> logger)
     {
         _context = dbContext;
@@ -14,10 +13,10 @@
 
     public void CheckAndRemoveUnconfirmedUsers()
     {
-        var cutoff = DateTime.UtcNow.AddHours(-5);
+        var cutoff = DateTime.UtcNow.AddHours(1);
 
         var usersToRemove = _context.Users
-            .Where(u => !u.EmailConfirmed)
+            .Where(u => !u.EmailConfirmed && u.CreatedDate < cutoff)
             .ToList();
 
         foreach (var user in usersToRemove)
@@ -41,14 +40,16 @@
 
     private async Task SendAccountRemovedMessage(string email)
     {
+        var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+
         try
         {
             var subject = "Account Removed";
 
             var body = $@"
-        <!DOCTYPE html>
-        <html lang='en'>
-        <head>
+            <!DOCTYPE html>
+            <html lang='en'>
+            <head>
             <meta charset='UTF-8'>
             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
             <style>
@@ -83,23 +84,24 @@
                     color: #999999;
                 }}
             </style>
-        </head>
-        <body>
+            </head>
+            <body>
             <div class='container'>
-                <div class='header'>
-                </div>
-                <div class='content'>
-                    <h1>Account Removed</h1>
-                    <p>Dear {email},</p>
-                    <p>Your account has been removed from our system because you didn't confirm it within 5 hours of creation.</p>
-                    <p>Please create a new account if you want to use our services.</p>
-                </div>
-                <div class='footer'>
-                    &copy; 2024 HELIOS. All rights reserved.
-                </div>
+            <div class='header'>
+            <img src='{logoUrl}' alt='Company Logo' style='width: 30%; height: auto;'>
             </div>
-        </body>
-        </html>";
+            <div class='content'>
+            <h1>Account Removed</h1>
+            <p>Dear <b>{email}</b>,</p>
+            <p>Your account has been removed from our system because you didn't confirm it within 1 hour of creation.</p>
+            <p>Please create a new account if you want to use our services.</p>
+            </div>
+            <div class='footer'>
+                    &copy; 2024 HELIOS. All rights reserved.
+            </div>
+            </div>
+            </body>
+            </html>";
 
             await _emailService.SendEmailAsync(email, subject, body); // Note the additional parameter to indicate HTML content
             _logger.LogInformation($"Email sent to {email}.");

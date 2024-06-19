@@ -14,15 +14,15 @@
         private readonly IEmailService _emailService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IJwtUtils _jwtUtils;
+        private readonly IRevokedTokensService _revokedTokensService;
 
-        public AuthController(IAuthService authService,UserManager<ApplicationUser> userManager,IEmailService emailService,SignInManager<ApplicationUser> signInManager,IJwtUtils jwtUtils)
+        public AuthController(IAuthService authService, UserManager<ApplicationUser> userManager, IEmailService emailService, SignInManager<ApplicationUser> signInManager, IRevokedTokensService revokedTokensService)
         {
             _authService = authService;
             _userManager = userManager;
             _emailService = emailService;
             _signInManager = signInManager;
-            _jwtUtils = jwtUtils;
+            _revokedTokensService = revokedTokensService;
         }
 
         /// <summary>
@@ -47,82 +47,13 @@
                 var callbackUrl = Url.Action("ConfirmEmail", "Auth",
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
+
+                var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+
                 await _emailService.SendEmailAsync(
                     user.Email,
                     "Confirm Your Email Address",
-                    @$"
-    <!DOCTYPE html>
-    <html lang='en'>
-    <head>
-        <meta charset='UTF-8'>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <title>Confirm Your Email</title>
-        <style>
-            body {{
-                font-family: Arial, sans-serif;
-                background-color: #f9f9f9;
-                margin: 0;
-                padding: 20px;
-            }}
-            .email-container {{
-                background-color: #ffffff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                max-width: 600px;
-                margin: auto;
-            }}
-            .email-header {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            .email-body {{
-                font-size: 16px;
-                line-height: 1.5;
-            }}
-            .email-footer {{
-                margin-top: 20px;
-                text-align: center;
-                font-size: 14px;
-                color: #888888;
-            }}
-            .button {{
-                display: inline-block;
-                padding: 10px 20px;
-                font-size: 16px;
-                color: #ffffff;
-                background-color: #4CAF50; /* Button color */
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold; /* Make button text bold */
-                border: none;
-                cursor: pointer;
-                text-align: center;
-            }}
-            .button:hover {{
-                background-color: #45a049; /* Darker shade for hover effect */
-            }}
-        </style>
-    </head>
-    <body>
-        <div class='email-container'>
-            <div class='email-header'>
-                <h2>Welcome to Helios!</h2>
-            </div>
-            <div class='email-body'>
-                <p>Dear {user.DisplayName},</p>
-                <p>Thank you for registering with Helios. To complete your registration, please confirm your email address by clicking the button below:</p>
-                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Confirm Your Email</a></p>
-                <p>If you did not create an account with us, please ignore this email.</p>
-                <p>Thank you,<br>Helios Team</p>
-            </div>
-            <div class='email-footer'>
-                <p>© 2024 Helios. All rights reserved.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    ");
+                    GenerateEmailHtmlContent(user.DisplayName, callbackUrl, logoUrl));
 
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
 
@@ -161,85 +92,12 @@
                 var callbackUrl = Url.Action("ConfirmEmail", "Auth",
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
+                var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+
                 await _emailService.SendEmailAsync(
                     user.Email,
                     "Confirm Your Email Address",
-                    @$"
-    <!DOCTYPE html>
-    <html lang='en'>
-    <head>
-        <meta charset='UTF-8'>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <title>Confirm Your Email</title>
-        <style>
-            body {{
-                font-family: Arial, sans-serif;
-                background-color: #f9f9f9;
-                margin: 0;
-                padding: 20px;
-            }}
-            .email-container {{
-                background-color: #ffffff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                max-width: 600px;
-                margin: auto;
-            }}
-            .email-header {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            .email-body {{
-                font-size: 16px;
-                line-height: 1.5;
-            }}
-            .email-footer {{
-                margin-top: 20px;
-                text-align: center;
-                font-size: 14px;
-                color: #888888;
-            }}
-            .button {{
-                display: inline-block;
-                padding: 10px 20px;
-                font-size: 16px;
-                color: #ffffff;
-                background-color: #4CAF50; /* Button color */
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold; /* Make button text bold */
-                border: none;
-                cursor: pointer;
-                text-align: center;
-            }}
-            .button:hover {{
-                background-color: #45a049; /* Darker shade for hover effect */
-            }}
-        </style>
-    </head>
-    <body>
-        <div class='email-container'>
-            <div class='email-header'>
-                <h2>Welcome to Helios!</h2>
-            </div>
-            <div class='email-body'>
-                <p>Dear {user.DisplayName},</p>
-                <p>Thank you for registering with Helios. To complete your registration, please confirm your email address by clicking the button below:</p>
-                <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button'>Confirm Your Email</a></p>
-                <p>If you did not create an account with us, please ignore this email.</p>
-                <p>Thank you,<br>Helios Team</p>
-            </div>
-            <div class='email-footer'>
-                <p>© 2024 Helios. All rights reserved.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    ");
-
-
-
+                    GenerateEmailHtmlContent(user.DisplayName, callbackUrl, logoUrl));
 
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
 
@@ -318,22 +176,6 @@
             return Ok();
         }
 
-        // SetTokenInCookie
-        private void SetRefreshTokenInCookie(string refreshToken, DateTime expires)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = expires.ToLocalTime(),
-                Secure = true,
-                IsEssential = true,
-                SameSite = SameSiteMode.None,
-
-            };
-
-            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-        }
-
         /// <summary>
         /// Confirms an email address.
         /// </summary>
@@ -364,7 +206,7 @@
         /// <param name="ResetPasswordDto">The password reset data.</param>
         /// <returns>A JSON response indicating the email sending result.</returns>
         [HttpPost]
-        public async Task<IActionResult> SendForgetPasswordEmail(ResetPasswordDto resetPassword)
+        public async Task<IActionResult> SendEmailResetPassword(ResetPasswordDto resetPassword)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.Values.ToList());
@@ -376,42 +218,7 @@
 
             var verificationCode = await _userManager.GenerateUserTokenAsync(user, "Email", "ResetPassword");
 
-            await _emailService.SendEmailAsync(mailTo: user.Email, "Reset Your Password",
-                $"Dear {user.UserName},<br><br>" +
-                $"We have received a request to reset your password. If you did not make this request, please ignore this email.<br><br>" +
-                $"To reset your password, please enter the following code: <b>{verificationCode}</b>.<br><br>" +
-                $"If you have any questions or concerns, please don't hesitate to contact us.<br><br>" +
-                $"Best regards,<br>" +
-                $"[Service App Team]");
-
-            return Ok("Please Check Your Email To Get The Verification Code.");
-        }
-
-        /// <summary>
-        /// Resends a password reset email.
-        /// </summary>
-        /// <param name="resetPasswordDto">The password reset data.</param>
-        /// <returns>A JSON response indicating the email sending result.</returns>
-        [HttpPost]
-        public async Task<IActionResult> ResendForgetPasswordEmail(ResetPasswordDto resetPassword)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState.Values.ToList());
-
-            var user = await _userManager.FindByEmailAsync(resetPassword.Email);
-
-            if (user is null || !(await _userManager.IsEmailConfirmedAsync(user)))
-                return BadRequest("Account May Be Not Found Or Not Confirmed!");
-
-            var verificationCode = await _userManager.GenerateUserTokenAsync(user, "Email", "ResetPassword");
-
-            await _emailService.SendEmailAsync(mailTo: user.Email, "Reset Your Password",
-                $"Dear {user.UserName},<br><br>" +
-                $"We have received a request to reset your password. If you did not make this request, please ignore this email.<br><br>" +
-                $"To reset your password, please enter the following code: <b>{verificationCode}</b>.<br><br>" +
-                $"If you have any questions or concerns, please don't hesitate to contact us.<br><br>" +
-                $"Best regards,<br>" +
-                $"[Service App Team]");
+            await SendPasswordResetEmail(user, verificationCode);
 
             return Ok("Please Check Your Email To Get The Verification Code.");
         }
@@ -453,29 +260,158 @@
         /// Logs out a user.
         /// </summary>
         /// <returns>A JSON response indicating the logout result.</returns>
-        [HttpPost]
+        [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        public IActionResult Logout()
         {
-            // Get the current token from the request headers
-            var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
 
-            // Expire the token
-            _jwtUtils.ExpireToken(token);
-                        
-            // Expire refresh token
-            await _authService.RevokeTokenAsync(token);
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Token is missing.");
+            }
 
-            // Remove the token from the user's session
-            await HttpContext.SignOutAsync();
+            _revokedTokensService.RevokeToken(token);
 
-            // Remove the token from the cookie
-            HttpContext.Response.Cookies.Delete("Token");
-            // Remove the refresh token from the cookie
-            HttpContext.Response.Cookies.Delete("RefreshToken");
-
-            // Return a success response
-            return Ok("Logged out successfully");
+            return Ok("Logged out successfully.");
         }
+
+        #region Private Methods
+        // SetTokenInCookie
+        private void SetRefreshTokenInCookie(string refreshToken, DateTime expires)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = expires.ToLocalTime(),
+                Secure = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.None,
+
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        // Send ResetPassword Email
+        private async Task SendPasswordResetEmail(ApplicationUser user, string verificationCode)
+        {
+            var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+
+            var emailBody = $@"
+            <div style='font-family: Arial, sans-serif;'>
+            <div style='text-align: center; margin-bottom: 20px;'>
+            <img src='{logoUrl}' alt='Helios Logo' style='width: 150px;'/>
+            </div>
+            <p>Dear <b>{user.DisplayName}</b>,</p>
+
+            <p>We have received a request to reset the password associated with your account. If you did not initiate this request, please disregard this email and no further action is required.</p>
+
+            <p>To reset your password, please use the following verification code:</p>
+            
+            <p style='font-size: 18px; font-weight: bold;'>{verificationCode}</p>
+            
+            <p>If you have any questions or need assistance, please feel free to contact our support team.</p>
+
+            <p>Best regards,<br>
+            <b>Helios Team</b></p>
+            
+            <hr>
+            <p style='font-size: 12px; color: grey;'>This email was sent to {user.Email}. If you no longer wish to receive these emails, you can unsubscribe at any time.</p>
+            </div>";
+
+            await _emailService.SendEmailAsync(
+                mailTo: user.Email,
+                subject: "Password Reset Request",
+                body: emailBody
+            );
+        }
+
+        // Generate Email body
+        private string GenerateEmailHtmlContent(string displayName, string callbackUrl, string logoUrl)
+        {
+            return @$"
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Confirm Your Email</title>
+    <style>
+    body {{
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 20px;
+    }}
+    .email-container {{
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }}
+    .email-header {{
+        text-align: center;
+        margin-bottom: 20px;
+    }}
+    .email-header img {{
+        max-width: 30%;
+        height: auto;
+        margin-bottom: 10px;
+    }}
+    .email-body {{
+        font-size: 16px;
+        line-height: 1.5;
+    }}
+    .email-footer {{
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #888888;
+    }}
+    .button {{
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: #ffd700; /* Text color yellow */
+        background-color: #000000; /* Button background color black */
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold; 
+        border: none;
+        cursor: pointer;
+        text-align: center;
+    }}
+    .button:hover {{
+        background-color: #333333; /* Lighter shade of black for hover effect */
+    }}
+    a.button:link, a.button:visited {{
+        color: #ffd700; /* Text color yellow */
+    }}
+    </style>
+    </head>
+    <body>
+    <div class='email-container'>
+    <div class='email-header'>
+    <img src='{logoUrl}' alt='Helios Logo'>
+    <h2>Welcome to Helios!</h2>
+    </div>
+    <div class='email-body'>
+    <p>Dear <b>{displayName}</b>,</p>
+    <p>Thank you for registering with Helios. To complete your registration, please confirm your email address by clicking the button below:</p>
+    <p><a href='{HtmlEncoder.Default.Encode(callbackUrl)}' class='button' style='color: #ffd700;'>Confirm Your Email</a></p>
+    <p>If you did not create an account with us, please ignore this email.</p>
+    <p>Thank you,<br><b>Helios Team</b></p>
+    </div>
+    <div class='email-footer'>
+    <p>© 2024 Helios. All rights reserved.</p>
+    </div>
+    </div>
+    </body>
+    </html>";
+    }
+        #endregion
     }
 }

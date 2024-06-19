@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240617212905_AddTableRates")]
+    partial class AddTableRates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,9 +166,6 @@ namespace WebApimyServices.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("AverageRating")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("CityId")
                         .HasColumnType("int");
 
@@ -284,10 +284,6 @@ namespace WebApimyServices.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ImagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("NameAR")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -306,79 +302,62 @@ namespace WebApimyServices.Migrations
                         new
                         {
                             Id = 1,
-                            ImagePath = "assets/images/categories/plumbing.png",
                             NameAR = "السباكة",
                             NameEN = "Plumbing"
                         },
                         new
                         {
                             Id = 2,
-                            ImagePath = "assets/images/categories/electricity.png",
                             NameAR = "كهرباء",
                             NameEN = "Electricity"
                         },
                         new
                         {
                             Id = 3,
-                            ImagePath = "assets/images/categories/carpentry.png",
                             NameAR = "نجارة",
                             NameEN = "Carpentry"
                         },
                         new
                         {
                             Id = 4,
-                            ImagePath = "assets/images/categories/hvac.png",
                             NameAR = "تكييف",
                             NameEN = "HVAC"
                         },
                         new
                         {
                             Id = 5,
-                            ImagePath = "assets/images/categories/painting.png",
                             NameAR = "دهان",
                             NameEN = "Painting"
                         },
                         new
                         {
                             Id = 6,
-                            ImagePath = "assets/images/categories/cleanliness.png",
                             NameAR = "نظافه",
                             NameEN = "cleanliness"
                         },
                         new
                         {
                             Id = 7,
-                            ImagePath = "assets/images/categories/plastering.png",
                             NameAR = "لياسة",
                             NameEN = "Plastering"
                         },
                         new
                         {
                             Id = 8,
-                            ImagePath = "assets/images/categories/moving_furniture.png",
                             NameAR = "نقل اثاث",
                             NameEN = "Moving furniture"
                         },
                         new
                         {
                             Id = 9,
-                            ImagePath = "assets/images/categories/flooring.png",
                             NameAR = "تبليط",
                             NameEN = "flooring"
                         },
                         new
                         {
                             Id = 10,
-                            ImagePath = "assets/images/categories/anti_bugs.png",
                             NameAR = "مكافحة حشرات",
                             NameEN = "Anti Bugs"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            ImagePath = "assets/images/categories/fixing_cars.png",
-                            NameAR = "تصليح سيارات",
-                            NameEN = "Fixing Cars"
                         });
                 });
 
@@ -817,7 +796,7 @@ namespace WebApimyServices.Migrations
                         .IsRequired();
 
                     b.HasOne("WebApimyServices.Models.ApplicationUser", "Factor")
-                        .WithMany("ReceivedRates")
+                        .WithMany("FactorGivenRates")
                         .HasForeignKey("FactorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -831,9 +810,9 @@ namespace WebApimyServices.Migrations
                 {
                     b.Navigation("CustomerRates");
 
-                    b.Navigation("Problems");
+                    b.Navigation("FactorGivenRates");
 
-                    b.Navigation("ReceivedRates");
+                    b.Navigation("Problems");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Category", b =>

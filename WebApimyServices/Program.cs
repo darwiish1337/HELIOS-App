@@ -3,8 +3,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add Services to the container.
 builder.Services.AddControllers();
 
-// Add Expired Token Service
-builder.Services.AddTransient<IJwtUtils, JwtUtils>();
+// Add Revoked Token Service
+builder.Services.AddTransient<IRevokedTokensService, RevokedTokensService>();
 
 // Add Categorey Service
 builder.Services.AddTransient<ICategoryService, CategoryService>();
@@ -15,6 +15,9 @@ builder.Services.AddTransient<IProblemService, ProblemService>();
 // Add User Service
 builder.Services.AddTransient<IUserService, UserService>();
 
+// Add Rate Service
+builder.Services.AddTransient<IRateService, RateService>();
+
 // Add Role Policy With Handler
 builder.Services.AddAuthorization(options =>
 {
@@ -22,7 +25,6 @@ builder.Services.AddAuthorization(options =>
         policy.Requirements.Add(new GlobalVerbRoleRequirement()));
 });
 builder.Services.AddSingleton<IAuthorizationHandler, GlobalVerbRoleHandler>();
-
 
 // Identity userManger
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(services =>
@@ -44,6 +46,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(services =>
     .AddUserValidator<EmailValidator>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// test
+builder.Services.AddHttpContextAccessor();
 
 // Reset Token Life 1 Hour
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -80,8 +85,10 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
         ValidIssuer = jwtOptions.Issuer,
-        ValidateAudience = false,
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecurityKey))
     };
@@ -92,7 +99,7 @@ builder.Services.AddCors(corsOptions =>
 {
     corsOptions.AddPolicy("MyPolicy", corsPolicyBuilder =>
     {
-        corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials();
     });
 });
 
@@ -105,6 +112,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Add Email Configuration
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
+
+// Email Service
 builder.Services.AddTransient<IEmailService, EmailService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -117,8 +126,8 @@ builder.Services.AddSwaggerGen(service =>
     service.SwaggerDoc("v1", new OpenApiInfo()
     {
         Version = "v1",
-        Title = "myService Application APIs",
-        Description = "API Documentation For myService Project"
+        Title = "HELIOS Application APIs",
+        Description = "API Documentation For HELIOS Project"
     });
 
     service.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
@@ -154,20 +163,19 @@ builder.Logging.AddDebug();
 
 // Configure Hangfire
 builder.Services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(builder.Configuration.GetConnectionString("cs"), new SqlServerStorageOptions
-    {
-        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-        QueuePollInterval = TimeSpan.Zero,
-        UseRecommendedIsolationLevel = true,
-        DisableGlobalLocks = true
-    }));
+   .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+   .UseSimpleAssemblyNameTypeSerializer()
+   .UseRecommendedSerializerSettings()
+   .UseSqlServerStorage(builder.Configuration.GetConnectionString("cs"), new SqlServerStorageOptions
+   {
+       CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+       SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+       QueuePollInterval = TimeSpan.Zero,
+       UseRecommendedIsolationLevel = true,
+       DisableGlobalLocks = true
+   }));
 
 builder.Services.AddHangfireServer();
-//builder.Services.AddSingleton<BackgroundJobClient>();
 builder.Services.AddScoped<HangfireService>();
 
 var app = builder.Build();
@@ -184,21 +192,43 @@ else
 
 app.UseStaticFiles();
  
-app.UseCors("MyPolicy");
-
-app.UseAuthentication();
+app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
+
+app.UseCors("MyPolicy");
 
 app.UseHangfireDashboard("/dashborad");
 
-app.MapControllers();
+//app.MapControllers();
 
+// Handfire Job Remove Account
 RecurringJob.AddOrUpdate<HangfireService>(
     "CheckAndRemoveUnconfirmedUsers",
     service => service.CheckAndRemoveUnconfirmedUsers(),
-    Cron.HourInterval(5));
+    Cron.HourInterval(1));
+
+//Validate the token in middleware
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
+    var revokedTokensService = context.RequestServices.GetRequiredService<IRevokedTokensService>();
+    if (revokedTokensService.IsTokenRevoked(token))
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Token is revoked.");
+        return;
+    }
+    await next();
+});
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 
 app.Run();

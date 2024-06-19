@@ -42,9 +42,6 @@
                    .HasForeignKey(b => b.UserId) // Define foreign key
                    .IsRequired(true); // UserId is Not Nullable in Book
 
-            builder.HasMany(u => u.Rates)   // User Has Many Rates
-                   .WithMany(r => r.Users); // Rates Has Many Users
-
             builder.Property(p => p.CreatedDate)
                    .HasDefaultValueSql("GETDATE()");
 

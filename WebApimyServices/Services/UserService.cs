@@ -68,23 +68,28 @@
             return users;
         }
 
-        public IEnumerable<UserDto> GetUserInFactorRole()
+        public IEnumerable<FactorDto> GetUserInFactorRole()
         {
-            var users = _userManager.GetUsersInRoleAsync(RoleConstants.Factor).Result
-                          .Select(u => new UserDto
-                          {
-                              Id = u.Id,
-                              FirstName = u.FirstName,
-                              LastName = u.LastName,
-                              UserType = u.UserType,
-                              PhoneNumber = u.PhoneNumber,
-                              DisplayName = u.DisplayName,
-                              CityId = u.CityId,
-                              CreatedDate = u.CreatedDate,
-                              Job = u.Job,
-                              ProfilePicture = u.ProfilePicture,
-                              Email = u.Email
-                          }).ToList();
+            var users = _userManager.Users
+               .Where(u => u.UserType == RoleConstants.Factor)
+               .Select(u => new FactorDto
+               {
+                   Id = u.Id,
+                   FirstName = u.FirstName,
+                   LastName = u.LastName ,
+                   UserType = u.UserType,
+                   PhoneNumber = u.PhoneNumber,
+                   DisplayName = u.DisplayName,
+                   CityId = u.CityId, 
+                   CreatedDate = u.CreatedDate,
+                   Job = u.Job,
+                   ProfilePicture = u.ProfilePicture ?? string.Empty,
+                   Email = u.Email,
+                   RatingValue = u.ReceivedRates != null && u.ReceivedRates.Any() ? u.ReceivedRates.Average(r => r.RatingValue) : 0,
+                   RatingCount = u.ReceivedRates != null ? u.ReceivedRates.Count : 0
+               })
+               .ToList();
+
             return users;
         }
 
@@ -158,6 +163,7 @@
             return new UpdateResult { Success = true, User = user };
         }
 
+        #region Private Methods
         // method to get new role based on UserType
         private string GetNewRoleBasedOnUserType(string userType)
         {
@@ -210,7 +216,7 @@
                 if (profileDto.FirstName != null && user.FirstName != profileDto.FirstName && daysSinceLastFirstnameUpdate < 10)
                 {
                     errorMessages.Add("Firstname can only be changed every 5 days.");
-                    daysUntilNextUpdate.Add("Firstname",10 - daysSinceLastFirstnameUpdate);
+                    daysUntilNextUpdate.Add("Firstname", 10 - daysSinceLastFirstnameUpdate);
                 }
                 if (profileDto.LastName != null && user.LastName != profileDto.LastName && daysSinceLastLastnameUpdate < 10)
                 {
@@ -261,11 +267,9 @@
                 {
                     throw new ValidationException("Job is required for Factor UserType");
                 }
-            }
-            else if (profileDto.UserType == RoleConstants.Customer)
-            {
-                // Delete job for Customer UserType
-                user.Job = null;
+
+                // Load the Problems navigation property
+                await _context.Entry(user).Collection(u => u.Problems).LoadAsync();
 
                 // Check if user has problems and delete if true
                 if (user.Problems.Any())
@@ -274,6 +278,27 @@
                     await _context.SaveChangesAsync();
                 }
             }
+            else if (profileDto.UserType == RoleConstants.Customer)
+            {
+                // Delete job for Customer UserType
+                user.Job = null;
+
+                // Load the Problems navigation property
+                await _context.Entry(user).Collection(u => u.ReceivedRates).LoadAsync();
+
+                // Delete associated Rates
+                if (user.ReceivedRates != null)
+                {
+                    foreach (var rate in user.ReceivedRates.ToList())
+                    {
+                        // Remove the rate from the navigation property
+                        user.ReceivedRates.Remove(rate);
+                        // Delete the rate entity
+                        _context.Rates.Remove(rate);
+                    }
+                }
+            }
         }
+        #endregion
     }
 }

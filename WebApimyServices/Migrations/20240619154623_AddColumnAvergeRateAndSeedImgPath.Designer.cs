@@ -12,8 +12,8 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240615093733_AddRatesTables")]
-    partial class AddRatesTables
+    [Migration("20240619154623_AddColumnAvergeRateAndSeedImgPath")]
+    partial class AddColumnAvergeRateAndSeedImgPath
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,21 +24,6 @@ namespace WebApimyServices.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("ApplicationUserRate", b =>
-                {
-                    b.Property<int>("RatesId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UsersId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("RatesId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("ApplicationUserRate");
-                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -181,6 +166,9 @@ namespace WebApimyServices.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("AverageRating")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("CityId")
                         .HasColumnType("int");
 
@@ -299,6 +287,10 @@ namespace WebApimyServices.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NameAR")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -317,60 +309,70 @@ namespace WebApimyServices.Migrations
                         new
                         {
                             Id = 1,
+                            ImagePath = "assets/images/categories/plumbing.jpg",
                             NameAR = "السباكة",
                             NameEN = "Plumbing"
                         },
                         new
                         {
                             Id = 2,
+                            ImagePath = "assets/images/categories/electricity.jpg",
                             NameAR = "كهرباء",
                             NameEN = "Electricity"
                         },
                         new
                         {
                             Id = 3,
+                            ImagePath = "assets/images/categories/carpentry.jpg",
                             NameAR = "نجارة",
                             NameEN = "Carpentry"
                         },
                         new
                         {
                             Id = 4,
+                            ImagePath = "assets/images/categories/hvac.jpg",
                             NameAR = "تكييف",
                             NameEN = "HVAC"
                         },
                         new
                         {
                             Id = 5,
+                            ImagePath = "assets/images/categories/painting.jpg",
                             NameAR = "دهان",
                             NameEN = "Painting"
                         },
                         new
                         {
                             Id = 6,
+                            ImagePath = "assets/images/categories/cleanliness.jpg",
                             NameAR = "نظافه",
                             NameEN = "cleanliness"
                         },
                         new
                         {
                             Id = 7,
+                            ImagePath = "assets/images/categories/plastering.jpg",
                             NameAR = "لياسة",
                             NameEN = "Plastering"
                         },
                         new
                         {
                             Id = 8,
+                            ImagePath = "assets/images/categories/moving_furniture.jpg",
                             NameAR = "نقل اثاث",
                             NameEN = "Moving furniture"
                         },
                         new
                         {
                             Id = 9,
+                            ImagePath = "assets/images/categories/flooring.jpg",
                             NameAR = "تبليط",
                             NameEN = "flooring"
                         },
                         new
                         {
                             Id = 10,
+                            ImagePath = "assets/images/categories/anti_bugs.jpg",
                             NameAR = "مكافحة حشرات",
                             NameEN = "Anti Bugs"
                         });
@@ -643,34 +645,37 @@ namespace WebApimyServices.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("RatedAt")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasMaxLength(50)
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FactorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<decimal>("RatingValue")
+                        .HasMaxLength(50)
                         .HasColumnType("decimal(3, 2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("FactorId");
+
                     b.ToTable("Rates");
-                });
-
-            modelBuilder.Entity("ApplicationUserRate", b =>
-                {
-                    b.HasOne("WebApimyServices.Models.Rate", null)
-                        .WithMany()
-                        .HasForeignKey("RatesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WebApimyServices.Models.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -799,9 +804,32 @@ namespace WebApimyServices.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WebApimyServices.Models.Rate", b =>
+                {
+                    b.HasOne("WebApimyServices.Models.ApplicationUser", "Customer")
+                        .WithMany("CustomerRates")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("WebApimyServices.Models.ApplicationUser", "Factor")
+                        .WithMany("ReceivedRates")
+                        .HasForeignKey("FactorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Factor");
+                });
+
             modelBuilder.Entity("WebApimyServices.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("CustomerRates");
+
                     b.Navigation("Problems");
+
+                    b.Navigation("ReceivedRates");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Category", b =>

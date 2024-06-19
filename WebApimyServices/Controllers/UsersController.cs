@@ -8,15 +8,18 @@
     /// </remarks>
     [Route("[controller]/[action]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
-        public UsersController(IUserService userService, UserManager<ApplicationUser> userManager)
+        private readonly IRateService _rateService;
+
+        public UsersController(IUserService userService, UserManager<ApplicationUser> userManager, IRateService rateService)
         {
             _userService = userService;
             _userManager = userManager;
+            _rateService = rateService;
         }
 
         /// <summary>
@@ -129,6 +132,149 @@
             }
 
             return Ok(users);
+        }
+
+        /// <summary>
+        /// Adds a new rate for a specific factor by a customer.
+        /// Only customers can add rates, and only factors can receive rates.
+        /// </summary>
+        /// <param name="request">The request object containing the customer ID, factor ID, and rating value.</param>
+        /// <returns>A CreatedAtAction result with a message indicating that the rate was added successfully.</returns>
+        /// <response code="201">The rate was added successfully.</response>
+        /// <response code="400">The request was invalid or the customer or factor ID was not found.</response>
+        /// <response code="500">An error occurred while adding the rate.</response>
+        [HttpPost]
+        public async Task<ActionResult> AddRateAsync([FromBody] AddRateRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState.Values.ToList());
+
+            try
+            {
+                await _rateService.AddRateAsync(request.CustomerId, request.FactorId, request.RatingValue);
+                return Ok("Rate added successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Updates an existing rate for a factor and customer.
+        /// Only the customer who added the rate can update it, and only for the same factor.
+        /// </summary>
+        /// <param name="rateId">The ID of the rate to update.</param>
+        /// <param name="request">The request object containing the new rating value.</param>
+        /// <returns>An OK result with a message indicating that the rate was updated successfully.</returns>
+        /// <response code="200">The rate was updated successfully.</response>
+        /// <response code="400">The request was invalid or the rate ID was not found.</response>
+        /// <response code="500">An error occurred while updating the rate.</response>
+        [HttpPut("{rateId}")]
+        public async Task<ActionResult> UpdateRateAsync(int rateId, [FromBody] UpdateRateRequestDto request)
+        {
+            try
+            {
+                await _rateService.UpdateRateAsync(rateId, request.RatingValue);
+                return Ok("Rate updated successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while updating the rate");
+            }
+        }
+
+        /// <summary>
+        /// Deletes a rate for a factor and customer.
+        /// Only the customer who added the rate can delete it, and only for the same factor.
+        /// </summary>
+        /// <param name="rateId">The ID of the rate to delete.</param>
+        /// <returns>An OK result with a message indicating that the rate was deleted successfully.</returns>
+        /// <response code="200">The rate was deleted successfully.</response>
+        /// <response code="400">The request was invalid or the rate ID was not found.</response>
+        /// <response code="500">An error occurred while deleting the rate.</response>
+        [HttpDelete("{rateId}")]
+        public async Task<ActionResult> DeleteRateAsync(int rateId)
+        {
+            try
+            {
+                await _rateService.DeleteRateAsync(rateId);
+                return Ok("Rate deleted successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while deleting the rate");
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all rates for a factor.
+        /// </summary>
+        /// <param name="factorId">The ID of the factor to retrieve rates for.</param>
+        /// <returns>An OK result with a list of rates for the factor.</returns>
+        /// <response code="200">The rates were retrieved successfully.</response>
+        /// <response code="500">An error occurred while retrieving rates for the factor.</response>
+        [HttpGet("{factorId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<FactorRatingDto>> GetRatesForFactorAsync(string factorId)
+        {
+            try
+            {
+                var rates = await _rateService.GetRatesForFactorAsync(factorId);
+                var response = new FactorRatingDto
+                {
+                    Ratings = rates,
+                    RatingCount = rates.Count()
+                };
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while retrieving rates for the factor");
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the current logged-in user's information.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing the current user's details if found, 
+        /// or a "Not Found" response if the user ID is not present in the token or the user does not exist.
+        /// </returns>
+        /// <remarks>
+        /// This method extracts the user ID from the JWT token claims and retrieves the user's details from the database.
+        /// Ensure the request contains a valid JWT token with the "uid" claim.
+        /// </remarks>
+        /// <response code="200">Returns the current user's details.</response>
+        /// <response code="404">If the user ID is not found in the token or the user does not exist.</response>
+        [HttpGet]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userId = User.FindFirstValue("uid"); // Extract user ID from claims
+            if (userId == null)
+            {
+                return NotFound("User ID not found in token");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(user);
         }
     }
 }

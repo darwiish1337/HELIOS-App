@@ -1,25 +1,35 @@
-﻿namespace WebApimyServices.Configurations
+﻿using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
+
+namespace WebApimyServices.Configurations
 {
     public class RateConfiguration : IEntityTypeConfiguration<Rate>
     {
         public void Configure(EntityTypeBuilder<Rate> builder)
         {
-            builder.HasKey(r => r.Id);
-
             builder.Property(c => c.Id)
-                   .ValueGeneratedOnAdd();
+                   .ValueGeneratedOnAdd()
+                   .HasMaxLength(50);
+
+            builder.HasOne(r => r.Customer)
+               .WithMany(r => r.CustomerRates)
+               .HasForeignKey(r => r.CustomerId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(r => r.Factor)
+                .WithMany(u => u.ReceivedRates)
+                .HasForeignKey(r => r.FactorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(r => r.RatingValue)
                 .HasColumnType("decimal(3, 2)")
-                .IsRequired();
+                .IsRequired()
+                .HasMaxLength(50);
 
-            builder.Property(r => r.RatedAt)
+            builder.Property(r => r.CreatedAt)
                 .HasColumnType("datetime2")
-                .IsRequired();
-
-            // Assuming the Rate entity has a collection of Users
-            builder.HasMany(r => r.Users)
-                .WithMany(u => u.Rates); // Changed to singular as a user typically has one rate
+                .IsRequired()
+                .HasMaxLength(50);
         }
     }
 }

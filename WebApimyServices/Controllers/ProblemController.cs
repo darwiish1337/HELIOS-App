@@ -50,6 +50,7 @@
         /// </remarks>
         /// <response code="200">Returns a list of problems.</response>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult> GetProblems()
         {
             var results = _problemService.GetProblemsAsync();
@@ -67,6 +68,7 @@
         /// <response code="200">Returns a list of problems that match the specified ID.</response>
         /// <response code="404">Returns if no problems are found with the specified ID.</response>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult> GetProblemsById(int id)
         {
             var results = await _problemService.GetProblemsByIdAsync(id);

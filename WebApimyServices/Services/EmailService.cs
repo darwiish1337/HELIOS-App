@@ -22,24 +22,23 @@
                 email.To.Add(MailboxAddress.Parse(mailTo));
 
                 var builder = new BodyBuilder();
+
                 builder.HtmlBody = body;
                 email.Body = builder.ToMessageBody();
 
-                using (var smtp = new SmtpClient())
-                {
+                using var smtp = new SmtpClient();
                     smtp.Connect(_emailConfig.Host, _emailConfig.Port, SecureSocketOptions.StartTls);
                     smtp.Authenticate(_emailConfig.Email, _emailConfig.Password);
                     await smtp.SendAsync(email);
 
-                    smtp.Disconnect(true);
-                }
+                smtp.Disconnect(true);
 
                 _logger.LogInformation($"Email sent to {mailTo}.");
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to send email to {mailTo}. Error: {ex.Message}");
-                throw; // Optional: Rethrow the exception to propagate it further if needed
+                throw;
             }
         }
     }

@@ -19,6 +19,7 @@
                    Id = c.Id,
                    NameAR = c.NameAR,
                    NameEN = c.NameEN,
+                   ImagePath = c.ImagePath,
                    Problems = c.Problems.Select(p => new ProblemForCategoryDto
                    {
                        Id = p.Id,
@@ -42,6 +43,7 @@
 
             return categories;
         }
+
         public async Task<IEnumerable<CategoryForProblemAndUserDto>> GetProblemByCategoryId(int id)
         {
             var categories = await _context.Categories
@@ -51,6 +53,7 @@
                    Id = c.Id,
                    NameAR = c.NameAR,
                    NameEN = c.NameEN,
+                   ImagePath = c.ImagePath,
                    Problems = c.Problems.Select(p => new ProblemForCategoryDto
                    {
                        Id = p.Id,

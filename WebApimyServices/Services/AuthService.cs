@@ -109,39 +109,6 @@
             };
         }
 
-        // Generate Token
-        private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
-        {
-            var userClaims = await _userManager.GetClaimsAsync(user);
-            var roles = await _userManager.GetRolesAsync(user);
-            var roleClaims = new List<Claim>();
-
-            foreach (var role in roles)
-                roleClaims.Add(new Claim("roles", role));
-
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("uid", user.Id)
-            }
-            .Union(userClaims)
-            .Union(roleClaims);
-
-            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey));
-
-            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
-
-            var jwtSecurityToken = new JwtSecurityToken(
-                issuer: _jwtOptions.Issuer,
-                audience: _jwtOptions.Audience,
-                claims: claims,
-                expires: DateTime.Now.AddHours(_jwtOptions.LifeTime),
-                signingCredentials: signingCredentials);
-
-            return jwtSecurityToken;
-        }
-
         public async Task<AuthModelDto> LoginAsync(LoginUserDto loginUserDto)
         {
             var authModel = new AuthModelDto();
@@ -168,6 +135,7 @@
                 authModel.IsAuthenticated = true;
                 authModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
                 authModel.Email = user.Email;
+                authModel.UserId = user.Id;
                 authModel.ExpiresOn = jwtSecurityToken.ValidTo;
                 authModel.Roles = roleList.ToList();
             }
@@ -196,23 +164,6 @@
             }
 
             return authModel;
-        }
-
-        // Generate RefreshToken
-        private RefreshToken GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-
-            using var generator = new RNGCryptoServiceProvider();
-
-            generator.GetBytes(randomNumber);
-
-            return new RefreshToken
-            {
-                Token = Convert.ToBase64String(randomNumber),
-                ExpiresOn = DateTime.Now.AddHours(1),
-                CreatedOn = DateTime.Now
-            };
         }
 
         public async Task<AuthModelDto> RefreshTokenAsync(string token)
@@ -255,6 +206,63 @@
             return authModel;
         }
 
+        #region Private Methods
+        // Generate Token
+        private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
+        {
+            // Fetch user claims and roles
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var roleClaims = new List<Claim>();
+
+            // Add role claims
+            foreach (var role in roles)
+            {
+                roleClaims.Add(new Claim("roles", role));
+            }
+
+            // Create the claims array
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("uid", user.Id)
+            }
+            .Union(userClaims)
+            .Union(roleClaims);
+
+            // Create security key and signing credentials
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey));
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
+            // Create the JWT token
+            var jwtSecurityToken = new JwtSecurityToken(
+                issuer: _jwtOptions.Issuer,
+                audience: _jwtOptions.Audience,
+                claims: claims,
+                expires: DateTime.Now.AddHours(_jwtOptions.LifeTime),
+                signingCredentials: signingCredentials);
+
+            return jwtSecurityToken;
+        }
+
+        // Generate RefreshToken
+        private RefreshToken GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+
+            using var generator = new RNGCryptoServiceProvider();
+
+            generator.GetBytes(randomNumber);
+
+            return new RefreshToken
+            {
+                Token = Convert.ToBase64String(randomNumber),
+                ExpiresOn = DateTime.Now.AddHours(1),
+                CreatedOn = DateTime.Now
+            };
+        }
+
         //Revoke RefreshToken
         public async Task<bool> RevokeTokenAsync(string token)
         {
@@ -274,5 +282,6 @@
 
             return true;
         }
+        #endregion
     }
 }

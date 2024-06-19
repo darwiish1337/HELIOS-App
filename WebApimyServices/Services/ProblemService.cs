@@ -177,6 +177,8 @@
             }
         }
 
+        #region Private Methods
+        // Save Img
         private async Task<string> SaveImg(IFormFile Img)
         {
             var coverName = $"{Guid.NewGuid()}{Path.GetExtension(Img.FileName)}";
@@ -188,5 +190,6 @@
 
             return coverName;
         }
+        #endregion
     }
 }
