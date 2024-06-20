@@ -1,3 +1,5 @@
+using WebApimyServices.Configuration;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Services to the container.
@@ -99,7 +101,7 @@ builder.Services.AddCors(corsOptions =>
 {
     corsOptions.AddPolicy("MyPolicy", corsPolicyBuilder =>
     {
-        corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+        corsPolicyBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
 
@@ -215,14 +217,72 @@ RecurringJob.AddOrUpdate<HangfireService>(
 //Validate the token in middleware
 app.Use(async (context, next) =>
 {
-    var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
-    var revokedTokensService = context.RequestServices.GetRequiredService<IRevokedTokensService>();
-    if (revokedTokensService.IsTokenRevoked(token))
+    var path = context.Request.Path.Value;
+
+    // Skip token validation for all endpoints starting with /Auth
+    if (path.Contains("/Auth/FactorRegistration", StringComparison.OrdinalIgnoreCase)      ||
+        path.Contains("/Auth/CustomerRegistration", StringComparison.OrdinalIgnoreCase)    ||
+        path.StartsWith("/Address", StringComparison.OrdinalIgnoreCase)                    ||
+        path.StartsWith("/Category", StringComparison.OrdinalIgnoreCase)                   ||
+        path.Contains("/Problem/GetProblems", StringComparison.OrdinalIgnoreCase)          ||
+        path.Contains("/Problem/GetProblemsById", StringComparison.OrdinalIgnoreCase)      ||
+        path.Contains("/Users/GetUsersInCustomerRole", StringComparison.OrdinalIgnoreCase) ||
+        path.Contains("/Users/GetUsersInFactorRole", StringComparison.OrdinalIgnoreCase)   ||
+        path.Contains("/Users/GetRatesForFactor", StringComparison.OrdinalIgnoreCase))
     {
-        context.Response.StatusCode = 401;
-        await context.Response.WriteAsync("Token is revoked.");
+        await next();
         return;
     }
+
+    var authorizationHeader = context.Request.Headers["Authorization"].ToString();
+    if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+    {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsync("Invalid Authorization header format.");
+        return;
+    }
+
+    var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+    var tokenHandler = new JwtSecurityTokenHandler();
+
+    try
+    {
+        var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecurityKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        }, out SecurityToken validatedToken);
+
+        // Get the token ID (jti)
+        var jwtToken = validatedToken as JwtSecurityToken;
+        var tokenId = jwtToken?.Id;
+
+        // Check if token is revoked using tokenId
+        var revokedTokensRepository = context.RequestServices.GetRequiredService<IRevokedTokensService>();
+
+        if (revokedTokensRepository.IsTokenRevoked(tokenId))
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Token is revoked.");
+            return;
+        }
+
+        // Set the user identity for further processing
+        context.User = claimsPrincipal;
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsync("Invalid token.");
+        return;
+    }
+
     await next();
 });
 

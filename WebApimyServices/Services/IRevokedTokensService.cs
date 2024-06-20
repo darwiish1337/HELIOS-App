@@ -2,7 +2,7 @@
 {
     public interface IRevokedTokensService
     {
-        void RevokeToken(string token);
-        bool IsTokenRevoked(string token);
+        bool IsTokenRevoked(string tokenId);
+        void RevokeToken(string tokenId);
     }
 }

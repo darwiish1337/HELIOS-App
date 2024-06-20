@@ -1,7 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
-
-namespace WebApimyServices.Configurations
+﻿namespace WebApimyServices.Configurations
 {
     public class RateConfiguration : IEntityTypeConfiguration<Rate>
     {

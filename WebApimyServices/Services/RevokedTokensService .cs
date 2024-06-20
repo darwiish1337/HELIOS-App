@@ -2,16 +2,25 @@
 {
     public class RevokedTokensService : IRevokedTokensService
     {
-        private readonly HashSet<string> _revokedTokens = new HashSet<string>();
+        private readonly ApplicationDbContext _context;
 
-        public bool IsTokenRevoked(string token)
+        public RevokedTokensService(ApplicationDbContext context)
         {
-            return _revokedTokens.Contains(token);
+            _context = context;
         }
 
-        public void RevokeToken(string token)
+        public bool IsTokenRevoked(string tokenId)
         {
-            _revokedTokens.Add(token);
+            return _context.RevokedTokens.Any(rt => rt.TokenId == tokenId);
+        }
+
+        public void RevokeToken(string tokenId)
+        {
+            if (!_context.RevokedTokens.Any(rt => rt.TokenId == tokenId))
+            {
+                _context.RevokedTokens.Add(new RevokedToken { TokenId = tokenId, RevokedAt = DateTime.UtcNow });
+                _context.SaveChanges();
+            }
         }
     }
 }

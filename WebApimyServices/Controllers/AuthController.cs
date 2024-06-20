@@ -31,7 +31,7 @@
         /// <param name="registertionFactorDto">The registration data.</param>
         /// <returns>A JSON response with the authentication result.</returns>
         [HttpPost]
-        public async Task<IActionResult> FactorRegisttration(RegistertionFactorDto registertionFactorDto)
+        public async Task<IActionResult> FactorRegistration(RegistertionFactorDto registertionFactorDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.Values.ToList());
@@ -76,7 +76,7 @@
         /// <param name="customerDto">The customer registration data.</param>
         /// <returns>A JSON response with the authentication result.</returns>
         [HttpPost]
-        public async Task<IActionResult> CustomerRegisttration(RegistertionCustomerDto customerDto)
+        public async Task<IActionResult> CustomerRegistration(RegistertionCustomerDto customerDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.Values.ToList());
@@ -264,14 +264,15 @@
         [Authorize]
         public IActionResult Logout()
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", string.Empty);
+            // Retrieve the token ID (jti) from the current authenticated user's claims
+            var tokenId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
-            if (string.IsNullOrEmpty(token))
+            if (tokenId != null)
             {
-                return BadRequest("Token is missing.");
+                _revokedTokensService.RevokeToken(tokenId);
             }
 
-            _revokedTokensService.RevokeToken(token);
+            // Optionally, clear any other session-related data or cookies
 
             return Ok("Logged out successfully.");
         }

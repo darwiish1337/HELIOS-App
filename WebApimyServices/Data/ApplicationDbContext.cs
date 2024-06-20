@@ -20,17 +20,25 @@
             builder.ApplyConfiguration(new ProblemConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
             builder.ApplyConfiguration(new RateConfiguration());
+            builder.ApplyConfiguration(new RevokeTokenConfiguration());
             #endregion
 
             #region RenameTables
             //Security-Schema
-            builder.Entity<ApplicationUser>().ToTable("Users", "security");
+
             builder.Entity<IdentityRole>().ToTable("Roles", "security");
+            builder.Entity<RevokedToken>().ToTable("RevokedTokens", "security");
             builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles", "security");
             builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims", "security");
             builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins", "security");
             builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims", "security");
             builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens", "security");
+
+            //AppData-Schema
+            builder.Entity<ApplicationUser>().ToTable("Users", "AppData");
+            builder.Entity<Rate>().ToTable("Rates", "AppData");
+            builder.Entity<Problems>().ToTable("Problems", "AppData");
+            builder.Entity<Category>().ToTable("Categories", "AppData");
 
             //Address-Schema
             builder.Entity<Governorate>().ToTable("Governorates", "address");
@@ -49,6 +57,7 @@
         public DbSet<Governorate> Governorates { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Rate> Rates { get; set; }
+        public DbSet<RevokedToken> RevokedTokens { get; set; }
         #endregion
     }
 }

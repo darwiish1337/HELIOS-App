@@ -15,22 +15,22 @@
             {
                 var email = new MimeMessage
                 {
-                    Sender = MailboxAddress.Parse(_emailConfig.Email),
                     Subject = subject
                 };
 
+                email.From.Add(new MailboxAddress(_emailConfig.DisplayName, _emailConfig.Email));
                 email.To.Add(MailboxAddress.Parse(mailTo));
 
-                var builder = new BodyBuilder();
-
-                builder.HtmlBody = body;
+                var builder = new BodyBuilder
+                {
+                    HtmlBody = body
+                };
                 email.Body = builder.ToMessageBody();
 
                 using var smtp = new SmtpClient();
-                    smtp.Connect(_emailConfig.Host, _emailConfig.Port, SecureSocketOptions.StartTls);
-                    smtp.Authenticate(_emailConfig.Email, _emailConfig.Password);
-                    await smtp.SendAsync(email);
-
+                smtp.Connect(_emailConfig.Host, _emailConfig.Port, SecureSocketOptions.StartTls);
+                smtp.Authenticate(_emailConfig.Email, _emailConfig.Password);
+                await smtp.SendAsync(email);
                 smtp.Disconnect(true);
 
                 _logger.LogInformation($"Email sent to {mailTo}.");
@@ -41,5 +41,6 @@
                 throw;
             }
         }
+
     }
 }

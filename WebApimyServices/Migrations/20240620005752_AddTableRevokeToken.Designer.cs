@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240620005752_AddTableRevokeToken")]
+    partial class AddTableRevokeToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -273,7 +276,7 @@ namespace WebApimyServices.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("Users", "AppData");
+                    b.ToTable("Users", "security");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Category", b =>
@@ -300,7 +303,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", "AppData");
+                    b.ToTable("Categories");
 
                     b.HasData(
                         new
@@ -642,7 +645,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Problems", "AppData");
+                    b.ToTable("Problems");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Rate", b =>
@@ -679,7 +682,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasIndex("FactorId");
 
-                    b.ToTable("Rates", "AppData");
+                    b.ToTable("Rates");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.RevokedToken", b =>
@@ -699,7 +702,7 @@ namespace WebApimyServices.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RevokedTokens", "security");
+                    b.ToTable("RevokedTokens");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -787,7 +790,7 @@ namespace WebApimyServices.Migrations
 
                             b1.HasKey("ApplicationUserId", "Id");
 
-                            b1.ToTable("RefreshToken", "AppData");
+                            b1.ToTable("RefreshToken", "security");
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationUserId");
