@@ -156,27 +156,6 @@
         }
 
         /// <summary>
-        /// Revokes a token.
-        /// </summary>
-        /// <param name="revokeTokenDto">The token to revoke.</param>
-        /// <returns>A JSON response indicating the revocation result.</returns>
-        [HttpPost]
-        public async Task<IActionResult> RevokeToken([FromBody]RevokeTokenDto revokeTokenDto)
-        {
-            var token = revokeTokenDto.Token ?? Request.Cookies["refreshToken"];
-               
-            if (string.IsNullOrEmpty(token))
-                return BadRequest("Token is required!");
-
-            var result = await _authService.RevokeTokenAsync(token);
-
-            if (!result)
-                return BadRequest("Token is invalid!");
-
-            return Ok();
-        }
-
-        /// <summary>
         /// Confirms an email address.
         /// </summary>
         /// <param name="email">The email address to confirm.</param>
@@ -260,19 +239,31 @@
         /// Logs out a user.
         /// </summary>
         /// <returns>A JSON response indicating the logout result.</returns>
+        /// <summary>
+        /// Logs out a user.
+        /// </summary>
+        /// <returns>A JSON response indicating the logout result.</returns>
         [HttpPost("logout")]
         [Authorize]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             // Retrieve the token ID (jti) from the current authenticated user's claims
             var tokenId = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            // Retrieve the refresh token from the cookies
+            var refreshToken = Request.Cookies["refreshToken"];
 
             if (tokenId != null)
             {
                 _revokedTokensService.RevokeToken(tokenId);
             }
 
-            // Optionally, clear any other session-related data or cookies
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                await _authService.RevokeTokenAsync(refreshToken);
+            }
+
+            ClearCookies();
 
             return Ok("Logged out successfully.");
         }
@@ -292,6 +283,25 @@
             };
 
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        // Clear Cookies
+        private void ClearCookies()
+        {
+            // Clear the authentication cookie
+            if (HttpContext.Request.Cookies.ContainsKey("refreshToken"))
+            {
+                HttpContext.Response.Cookies.Delete("refreshToken");
+            }
+
+            // Clear other cookies as necessary
+            foreach (var cookie in HttpContext.Request.Cookies)
+            {
+                HttpContext.Response.Cookies.Delete(cookie.Key);
+            }
+
+            // Optionally, clear session data
+            HttpContext.Session.Clear();
         }
 
         // Send ResetPassword Email

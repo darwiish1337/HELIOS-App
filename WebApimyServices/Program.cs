@@ -1,4 +1,4 @@
-using WebApimyServices.Configuration;
+using Microsoft.AspNetCore.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -206,8 +206,6 @@ app.UseCors("MyPolicy");
 
 app.UseHangfireDashboard("/dashborad");
 
-//app.MapControllers();
-
 // Handfire Job Remove Account
 RecurringJob.AddOrUpdate<HangfireService>(
     "CheckAndRemoveUnconfirmedUsers",
@@ -219,16 +217,25 @@ app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value;
 
-    // Skip token validation for all endpoints starting with /Auth
-    if (path.Contains("/Auth/FactorRegistration", StringComparison.OrdinalIgnoreCase)      ||
-        path.Contains("/Auth/CustomerRegistration", StringComparison.OrdinalIgnoreCase)    ||
-        path.StartsWith("/Address", StringComparison.OrdinalIgnoreCase)                    ||
-        path.StartsWith("/Category", StringComparison.OrdinalIgnoreCase)                   ||
-        path.Contains("/Problem/GetProblems", StringComparison.OrdinalIgnoreCase)          ||
-        path.Contains("/Problem/GetProblemsById", StringComparison.OrdinalIgnoreCase)      ||
-        path.Contains("/Users/GetUsersInCustomerRole", StringComparison.OrdinalIgnoreCase) ||
-        path.Contains("/Users/GetUsersInFactorRole", StringComparison.OrdinalIgnoreCase)   ||
-        path.Contains("/Users/GetRatesForFactor", StringComparison.OrdinalIgnoreCase))
+    // List of endpoints to bypass token validation
+    var excludedEndpoints = new List<string>
+    {
+        "/Auth/FactorRegistration",
+        "/Auth/CustomerRegistration",
+        "/Address",
+        "/Category",
+        "/Problem/GetProblems",
+        "/Problem/GetProblemsById",
+        "/Users/GetUserInCustomerRole",
+        "/Users/GetUsersInFactorRole",
+        "/Auth/Login",
+        "/Auth/RefreshToken",
+        "/Auth/SendEmailResetPassword",
+        "/Auth/ResetPassword",
+        "/Auth/ConfirmEmail"
+    };
+
+    if (EndpointValidator.IsExcludedEndpoint(path, excludedEndpoints))
     {
         await next();
         return;
@@ -259,27 +266,33 @@ app.Use(async (context, next) =>
             ClockSkew = TimeSpan.Zero
         }, out SecurityToken validatedToken);
 
-        // Get the token ID (jti)
         var jwtToken = validatedToken as JwtSecurityToken;
         var tokenId = jwtToken?.Id;
 
-        // Check if token is revoked using tokenId
-        var revokedTokensRepository = context.RequestServices.GetRequiredService<IRevokedTokensService>();
+        var revokedTokensService = context.RequestServices.GetRequiredService<IRevokedTokensService>();
 
-        if (revokedTokensRepository.IsTokenRevoked(tokenId))
+        if (revokedTokensService.IsTokenRevoked(tokenId))
         {
             context.Response.StatusCode = 401;
             await context.Response.WriteAsync("Token is revoked.");
             return;
         }
 
-        // Set the user identity for further processing
         context.User = claimsPrincipal;
     }
-    catch (Exception ex)
+    catch (SecurityTokenException)
     {
         context.Response.StatusCode = 401;
         await context.Response.WriteAsync("Invalid token.");
+        return;
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync("An unexpected error occurred.");
+        // Log the exception
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while validating the token.");
         return;
     }
 

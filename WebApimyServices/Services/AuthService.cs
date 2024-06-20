@@ -206,6 +206,26 @@
             return authModel;
         }
 
+        //Revoke RefreshToken
+        public async Task<bool> RevokeTokenAsync(string token)
+        {
+            var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
+
+            if (user is null)
+                return false;
+
+            var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
+
+            if (!refreshToken.IsActive)
+                return false;
+
+            refreshToken.RevokedOn = DateTime.Now;
+
+            await _userManager.UpdateAsync(user);
+
+            return true;
+        }
+
         #region Private Methods
         // Generate Token
         private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
@@ -258,29 +278,9 @@
             return new RefreshToken
             {
                 Token = Convert.ToBase64String(randomNumber),
-                ExpiresOn = DateTime.Now.AddHours(1),
+                ExpiresOn = DateTime.Now.AddDays(3),
                 CreatedOn = DateTime.Now
             };
-        }
-
-        //Revoke RefreshToken
-        public async Task<bool> RevokeTokenAsync(string token)
-        {
-            var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
-
-            if (user is null)
-                return false;
-
-            var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
-
-            if (!refreshToken.IsActive)
-                return false;
-
-            refreshToken.RevokedOn = DateTime.Now;
-
-            await _userManager.UpdateAsync(user);
-
-            return true;
         }
         #endregion
     }

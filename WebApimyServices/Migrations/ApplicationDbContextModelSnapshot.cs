@@ -761,7 +761,7 @@ namespace WebApimyServices.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsMany("WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("WebApimyServices.Models.ApplicationUser.RefreshTokens#WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
