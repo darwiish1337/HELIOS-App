@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Services to the container.
@@ -222,8 +220,10 @@ app.Use(async (context, next) =>
     {
         "/Auth/FactorRegistration",
         "/Auth/CustomerRegistration",
-        "/Address",
-        "/Category",
+        "/Address/GetAllGovers",
+        "/Address/GetGoverCities",
+        "/Category/GetCategoriesWithProblem",
+        "/Category/GetProblemByCategoryId",
         "/Problem/GetProblems",
         "/Problem/GetProblemsById",
         "/Users/GetUserInCustomerRole",
@@ -234,6 +234,13 @@ app.Use(async (context, next) =>
         "/Auth/ResetPassword",
         "/Auth/ConfirmEmail"
     };
+
+    // Check if the request is for a static file
+    if (path.StartsWith("/assets/") || (path.StartsWith("/wwwroot/") || (path.StartsWith("/root/") || (path.Contains("/assets/")))))
+    {
+        await next();
+        return;
+    }
 
     if (EndpointValidator.IsExcludedEndpoint(path, excludedEndpoints))
     {

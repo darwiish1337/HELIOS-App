@@ -48,7 +48,7 @@
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
 
-                var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+                var logoUrl = "https://i.postimg.cc/v811BYfy/HELIOS-LOGO.png";
 
                 await _emailService.SendEmailAsync(
                     user.Email,
@@ -92,7 +92,7 @@
                 var callbackUrl = Url.Action("ConfirmEmail", "Auth",
                     new { email = user.Email, code = code }, protocol: HttpContext.Request.Scheme);
 
-                var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+                var logoUrl = "https://i.postimg.cc/v811BYfy/HELIOS-LOGO.png";
 
                 await _emailService.SendEmailAsync(
                     user.Email,
@@ -307,7 +307,7 @@
         // Send ResetPassword Email
         private async Task SendPasswordResetEmail(ApplicationUser user, string verificationCode)
         {
-            var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+            var logoUrl = "https://i.postimg.cc/v811BYfy/HELIOS-LOGO.png";
 
             var emailBody = $@"
             <div style='font-family: Arial, sans-serif;'>

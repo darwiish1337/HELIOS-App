@@ -40,7 +40,7 @@
 
     private async Task SendAccountRemovedMessage(string email)
     {
-        var logoUrl = "https://i.postimg.cc/xdDcGhfS/HEL-removebg-preview.png";
+        var logoUrl = "https://i.postimg.cc/v811BYfy/HELIOS-LOGO.png";
 
         try
         {
