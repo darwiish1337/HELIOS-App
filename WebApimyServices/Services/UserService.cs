@@ -51,7 +51,6 @@
                               DisplayName = u.DisplayName,
                               CityId = u.CityId,
                               CreatedDate = u.CreatedDate,
-                              Job = u.Job,
                               ProfilePicture = u.ProfilePicture,
                               Email = u.Email,
                               Problems = u.Problems.Select(p => new ProblemDto
@@ -82,11 +81,18 @@
                    DisplayName = u.DisplayName,
                    CityId = u.CityId, 
                    CreatedDate = u.CreatedDate,
-                   Job = u.Job,
+                   Title = u.Title,
+                   Description = u.Description,
                    ProfilePicture = u.ProfilePicture ?? string.Empty,
                    Email = u.Email,
                    RatingValue = u.ReceivedRates != null && u.ReceivedRates.Any() ? u.ReceivedRates.Average(r => r.RatingValue) : 0,
-                   RatingCount = u.ReceivedRates != null ? u.ReceivedRates.Count : 0
+                   RatingCount = u.ReceivedRates != null ? u.ReceivedRates.Count : 0,
+                   Job = new JobForFactorDto
+                   {
+                       Id = u.Job.Id,
+                       Name = u.Job.Name,
+                       ImagePath = u.Job.ImagePath
+                   },
                })
                .ToList();
 
@@ -161,6 +167,75 @@
             }
 
             return new UpdateResult { Success = true, User = user };
+        }
+
+        public async Task<UserJobInfoDto> AddTitleAndDescriptionAsync(string userId, UserJobInfoDto dto)
+        {
+            var user = await GetUserByIdAsync(userId);
+            user.Title = dto.Title;
+            user.Description = dto.Description;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                throw new Exception($"Failed to update user with ID {userId}.");
+            }
+
+            return new UserJobInfoDto { Title = user.Title, Description = user.Description };
+        }
+
+        public async Task<UserJobInfoDto> UpdateTitleAndDescriptionAsync(string userId, UserJobInfoDto dto)
+        {
+            var user = await GetUserByIdAsync(userId);
+
+            if (!string.IsNullOrEmpty(dto.Title))
+            {
+                user.Title = dto.Title;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Description))
+            {
+                user.Description = dto.Description;
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                throw new Exception($"Failed to update user with ID {userId}.");
+            }
+
+            return new UserJobInfoDto { Title = user.Title, Description = user.Description };
+        }
+
+        public async Task<int> DeleteTitleAndDescriptionAsync(string userId)
+        {
+            var user = await GetUserByIdAsync(userId);
+            var originalTitle = user.Title;
+            var originalDescription = user.Description;
+
+            user.Title = null;
+            user.Description = null;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                throw new Exception($"Failed to update user with ID {userId}.");
+            }
+
+            // Determine the number of properties that have changed
+            var rowsChanged = 0;
+
+            if (user.Title != originalTitle)
+            {
+                rowsChanged++;
+            }
+            if (user.Description != originalDescription)
+            {
+                rowsChanged++;
+            }
+
+            return rowsChanged;
         }
 
         #region Private Methods
@@ -255,17 +330,17 @@
                 await _userManager.AddToRoleAsync(user, newRole);
             }
 
-            if (profileDto.Job != null)
+            if (profileDto.JobId != null)
             {
-                user.Job = profileDto.Job;
+                user.JobId = profileDto.JobId;
             }
 
             // Handle job field based on UserType
             if (profileDto.UserType == RoleConstants.Factor)
             {
-                if (string.IsNullOrEmpty(user.Job))
+                if (user.JobId is null)
                 {
-                    throw new ValidationException("Job is required for Factor UserType");
+                   throw new ValidationException("JobId is required for Factor");
                 }
 
                 // Load the Problems navigation property
@@ -280,8 +355,10 @@
             }
             else if (profileDto.UserType == RoleConstants.Customer)
             {
-                // Delete job for Customer UserType
-                user.Job = null;
+                // Delete job info for Customer UserType
+                user.JobId = null;
+                user.Description = null;
+                user.Title = null;
 
                 // Load the Problems navigation property
                 await _context.Entry(user).Collection(u => u.ReceivedRates).LoadAsync();
@@ -298,6 +375,17 @@
                     }
                 }
             }
+        }
+
+        // method to get user
+        private async Task<ApplicationUser> GetUserByIdAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new Exception($"User with ID {userId} not found.");
+            }
+            return user;
         }
         #endregion
     }

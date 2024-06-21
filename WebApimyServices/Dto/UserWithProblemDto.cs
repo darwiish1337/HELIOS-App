@@ -8,7 +8,6 @@
         public string Email { get; set; } 
         public string PhoneNumber { get; set; } 
         public string? DisplayName { get; set; }
-        public string? Job { get; set; }
         public string? ProfilePicture { get; set; }
         public DateTime CreatedDate { get; set; }
         public string UserType { get; set; } 
@@ -24,14 +23,16 @@
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string? DisplayName { get; set; }
-        public string? Job { get; set; }
         public string? ProfilePicture { get; set; }
         public DateTime CreatedDate { get; set; }
         public string UserType { get; set; }
         public int CityId { get; set; }
-        public ICollection<RateDto> FactorGivenRates { get; set; }
         public decimal RatingValue { get; set; }
         public int RatingCount { get; set; }
+        public JobForFactorDto Job { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+
     }
 
     public class RateDto

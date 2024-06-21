@@ -7,5 +7,8 @@
         IEnumerable<FactorDto> GetUserInFactorRole();
         IEnumerable<ApplicationUser> Search(string query);
         Task<bool> ChangePassowrd(ChangePasswordDto changePasswordDto, string id);
+        Task<UserJobInfoDto> AddTitleAndDescriptionAsync(string userId, UserJobInfoDto dto);
+        Task<UserJobInfoDto> UpdateTitleAndDescriptionAsync(string userId, UserJobInfoDto dto);
+        Task<int> DeleteTitleAndDescriptionAsync(string userId);
     }
 }

@@ -232,7 +232,8 @@ app.Use(async (context, next) =>
         "/Auth/RefreshToken",
         "/Auth/SendEmailResetPassword",
         "/Auth/ResetPassword",
-        "/Auth/ConfirmEmail"
+        "/Auth/ConfirmEmail",
+        "/Jobs/"
     };
 
     // Check if the request is for a static file

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240621111726_AddJobTable")]
+    partial class AddJobTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -202,9 +205,6 @@ namespace WebApimyServices.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<int?>("JobId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("LastFirstnameUpdateDate")
                         .HasMaxLength(50)
                         .HasColumnType("datetime2");
@@ -274,10 +274,6 @@ namespace WebApimyServices.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CityId");
-
-                    b.HasIndex("JobId")
-                        .IsUnique()
-                        .HasFilter("[JobId] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -619,92 +615,21 @@ namespace WebApimyServices.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ImagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Jobs", "AppData");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ImagePath = "assets/images/categories/plumbing.png",
-                            Name = "سباك"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ImagePath = "assets/images/categories/electricity.png",
-                            Name = "فني كهرباء"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            ImagePath = "assets/images/categories/carpentry.png",
-                            Name = "نجار"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            ImagePath = "assets/images/categories/hvac.png",
-                            Name = "فني التدفئة والتكييف والتبريد"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            ImagePath = "assets/images/categories/painting.png",
-                            Name = "حرفي دهان"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            ImagePath = "assets/images/categories/cleanliness.png",
-                            Name = "عامل نظافه"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            ImagePath = "assets/images/categories/plastering.png",
-                            Name = "عامل بنا"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            ImagePath = "assets/images/categories/oyster_worker.png",
-                            Name = "عامل محاره"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            ImagePath = "assets/images/categories/moving_furniture.png",
-                            Name = "ناقل اثاث"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            ImagePath = "assets/images/categories/flooring.png",
-                            Name = "مبلط"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            ImagePath = "assets/images/categories/anti_bugs.png",
-                            Name = "مكافح حشرات"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            ImagePath = "assets/images/categories/fixing_cars.png",
-                            Name = "مصلح سيارات"
-                        });
+                    b.ToTable("Jobs", "AppData");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Problems", b =>
@@ -871,12 +796,7 @@ namespace WebApimyServices.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApimyServices.Models.Job", "Job")
-                        .WithOne("User")
-                        .HasForeignKey("WebApimyServices.Models.ApplicationUser", "JobId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.OwnsMany("WebApimyServices.Models.ApplicationUser.RefreshTokens#WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");
@@ -910,8 +830,6 @@ namespace WebApimyServices.Migrations
 
                     b.Navigation("City");
 
-                    b.Navigation("Job");
-
                     b.Navigation("RefreshTokens");
                 });
 
@@ -924,6 +842,17 @@ namespace WebApimyServices.Migrations
                         .IsRequired();
 
                     b.Navigation("Governorate");
+                });
+
+            modelBuilder.Entity("WebApimyServices.Models.Job", b =>
+                {
+                    b.HasOne("WebApimyServices.Models.ApplicationUser", "User")
+                        .WithOne("Job")
+                        .HasForeignKey("WebApimyServices.Models.Job", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WebApimyServices.Models.Problems", b =>
@@ -968,6 +897,9 @@ namespace WebApimyServices.Migrations
                 {
                     b.Navigation("CustomerRates");
 
+                    b.Navigation("Job")
+                        .IsRequired();
+
                     b.Navigation("Problems");
 
                     b.Navigation("ReceivedRates");
@@ -986,12 +918,6 @@ namespace WebApimyServices.Migrations
             modelBuilder.Entity("WebApimyServices.Models.Governorate", b =>
                 {
                     b.Navigation("City");
-                });
-
-            modelBuilder.Entity("WebApimyServices.Models.Job", b =>
-                {
-                    b.Navigation("User")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

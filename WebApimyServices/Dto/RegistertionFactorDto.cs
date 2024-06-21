@@ -2,6 +2,7 @@
 {
     public class RegistertionFactorDto : BaseUserDto
     {
-        public string? Job { get; set; } = null;
+        [Required]
+        public int JobId { get; set; }
     }
 }

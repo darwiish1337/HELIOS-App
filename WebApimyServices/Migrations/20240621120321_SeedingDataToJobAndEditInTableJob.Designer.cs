@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240621120321_SeedingDataToJobAndEditInTableJob")]
+    partial class SeedingDataToJobAndEditInTableJob
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -876,7 +879,7 @@ namespace WebApimyServices.Migrations
                         .HasForeignKey("WebApimyServices.Models.ApplicationUser", "JobId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.OwnsMany("WebApimyServices.Models.ApplicationUser.RefreshTokens#WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
+                    b.OwnsMany("WebApimyServices.Models.RefreshToken", "RefreshTokens", b1 =>
                         {
                             b1.Property<string>("ApplicationUserId")
                                 .HasColumnType("nvarchar(450)");

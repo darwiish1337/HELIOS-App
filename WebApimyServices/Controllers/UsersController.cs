@@ -247,6 +247,71 @@
         }
 
         /// <summary>
+        /// Adds or updates the title and description for a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="dto">The DTO containing the title and description.</param>
+        /// <returns>The updated UserJobInfoDto with the new title and description.</returns>
+        /// <response code="200">Returns the updated UserJobInfoDto.</response>
+        /// <response code="400">If there is an error processing the request.</response>
+        [HttpPost]
+        public async Task<IActionResult> AddTitleAndDescription(string userId, [FromBody] UserJobInfoDto dto)
+        {
+            try
+            {
+                var result = await _userService.AddTitleAndDescriptionAsync(userId, dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Updates the title and description for a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <param name="dto">The DTO containing the updated title and description.</param>
+        /// <returns>The updated UserJobInfoDto with the new title and description.</returns>
+        /// <response code="200">Returns the updated UserJobInfoDto.</response>
+        /// <response code="400">If there is an error processing the request.</response>
+        [HttpPut]
+        public async Task<IActionResult> UpdateTitleAndDescription(string userId, [FromBody] UserJobInfoDto dto)
+        {
+            try
+            {
+                var result = await _userService.UpdateTitleAndDescriptionAsync(userId, dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Deletes the title and description for a user.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <returns>The number of rows affected (1 if successful, 0 if no changes were made).</returns>
+        /// <response code="200">Returns the number of rows affected.</response>
+        /// <response code="400">If there is an error processing the request.</response>
+        [HttpDelete]
+        public async Task<IActionResult> DeleteTitleAndDescription(string userId)
+        {
+            try
+            {
+                var rowsAffected = await _userService.DeleteTitleAndDescriptionAsync(userId);
+                return Ok(new { rowsAffected });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Retrieves the current logged-in user's information.
         /// </summary>
         /// <returns>
@@ -263,12 +328,14 @@
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = User.FindFirstValue("uid"); // Extract user ID from claims
+
             if (userId == null)
             {
                 return NotFound("User ID not found in token");
             }
 
             var user = await _userManager.FindByIdAsync(userId);
+
             if (user == null)
             {
                 return NotFound("User not found");

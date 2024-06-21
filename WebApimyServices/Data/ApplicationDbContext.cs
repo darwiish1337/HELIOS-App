@@ -21,6 +21,7 @@
             builder.ApplyConfiguration(new UserConfiguration());
             builder.ApplyConfiguration(new RateConfiguration());
             builder.ApplyConfiguration(new RevokeTokenConfiguration());
+            builder.ApplyConfiguration(new JobConfiguration());
             #endregion
 
             #region RenameTables
@@ -39,6 +40,7 @@
             builder.Entity<Rate>().ToTable("Rates", "AppData");
             builder.Entity<Problems>().ToTable("Problems", "AppData");
             builder.Entity<Category>().ToTable("Categories", "AppData");
+            builder.Entity<Job>().ToTable("Jobs", "AppData");
 
             //Address-Schema
             builder.Entity<Governorate>().ToTable("Governorates", "address");
@@ -48,6 +50,7 @@
             #region Seeding
             CategorySeeder.Seed(builder);
             GovernorateSeeder.Seed(builder);
+            JobSeeder.Seed(builder);
             #endregion
         }
 
@@ -58,6 +61,7 @@
         public DbSet<Category> Categories { get; set; }
         public DbSet<Rate> Rates { get; set; }
         public DbSet<RevokedToken> RevokedTokens { get; set; }
+        public DbSet<Job> Jobs { get; set; }
         #endregion
     }
 }
