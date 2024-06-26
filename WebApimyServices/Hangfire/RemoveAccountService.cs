@@ -1,10 +1,10 @@
-﻿public class HangfireService
+﻿public class RemoveAccountService
 {
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
-    private readonly ILogger<HangfireService> _logger;
+    private readonly ILogger<RemoveAccountService> _logger;
 
-    public HangfireService(ApplicationDbContext dbContext, IEmailService emailService, ILogger<HangfireService> logger)
+    public RemoveAccountService(ApplicationDbContext dbContext, IEmailService emailService, ILogger<RemoveAccountService> logger)
     {
         _context = dbContext;
         _emailService = emailService;
@@ -13,7 +13,7 @@
 
     public void CheckAndRemoveUnconfirmedUsers()
     {
-        var cutoff = DateTime.UtcNow.AddHours(1);
+        var cutoff = DateTime.UtcNow.AddHours(-1); 
 
         var usersToRemove = _context.Users
             .Where(u => !u.EmailConfirmed && u.CreatedDate < cutoff)

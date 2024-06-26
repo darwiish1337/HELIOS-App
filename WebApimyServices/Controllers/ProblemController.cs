@@ -11,11 +11,17 @@
     [Authorize]
     public class ProblemController : ControllerBase
     {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ILogger<ProblemController> _logger;
         private readonly ApplicationDbContext _context;
         private readonly IProblemService _problemService;
 
-        public ProblemController(ApplicationDbContext context,IProblemService problemService)
+        public ProblemController(UserManager<ApplicationUser> userManager, IWebHostEnvironment webHostEnvironment, ILogger<ProblemController> logger, ApplicationDbContext context, IProblemService problemService)
         {
+            _userManager = userManager;
+            _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
             _context = context;
             _problemService = problemService;
         }
@@ -31,7 +37,7 @@
         /// <response code="200">Returns the created problem details.</response>
         /// <response code="400">Returns an error if the request is invalid.</response>
         [HttpPost]
-        [Authorize(Policy = "GlobalVerbRolePolicy")]
+        [AuthorizeRole(RoleConstants.Customer, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> AddProblem([FromForm]ProblemsDto problemsDto)
         {
             if (!ModelState.IsValid)
@@ -40,43 +46,6 @@
             await _problemService.Create(problemsDto);
 
             return Ok(problemsDto);
-        }
-
-        /// <summary>
-        /// Retrieves a list of all problems.
-        /// </summary>
-        /// <remarks>
-        /// This endpoint returns a list of all problems in the system.
-        /// </remarks>
-        /// <response code="200">Returns a list of problems.</response>
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<ActionResult> GetProblems()
-        {
-            var results = _problemService.GetProblemsAsync();
-
-            return Ok(results);
-        }
-
-        /// <summary>
-        /// Retrieves a list of problems by ID.
-        /// </summary>
-        /// <param name="id">The ID of the problems to retrieve.</param>
-        /// <remarks>
-        /// This endpoint returns a list of problems that match the specified ID.
-        /// </remarks>
-        /// <response code="200">Returns a list of problems that match the specified ID.</response>
-        /// <response code="404">Returns if no problems are found with the specified ID.</response>
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<ActionResult> GetProblemsById(int id)
-        {
-            var results = await _problemService.GetProblemsByIdAsync(id);
-
-            if (!results.Any())
-                return NotFound(); 
-
-            return Ok(results);
         }
 
         /// <summary>
@@ -90,7 +59,7 @@
         /// <response code="200">Returns the updated problem.</response>
         /// <response code="400">Returns if the model state is invalid or the update operation fails.</response>
         [HttpPut]
-        [Authorize(Policy = "GlobalVerbRolePolicy")]
+        [AuthorizeRole(RoleConstants.Customer, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> UpdateProblem(ProblemsUpdateDto problemsDto)
         {
             if (!ModelState.IsValid)
@@ -116,20 +85,17 @@
         /// <response code="403">Returns if the user is not in the "Customer" role.</response>
         /// <response code="400">Returns if the ID is null.</response>
         [HttpDelete("{id}")]
-        [Authorize(Policy = "GlobalVerbRolePolicy")]
+        [AuthorizeRole(RoleConstants.Customer, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> DeleteProblemById(int id)
         {
-            if (!User.IsInRole(RoleConstants.Customer))
-                return Forbid();
+            var result = await _problemService.Delete(id);
 
-            if (id != null)
+            if (!result)
             {
-                Problems problem = _context.Problems.FirstOrDefault(e => e.Id == id);
-                _context.Problems.Remove(problem);
-                _context.SaveChanges();
-                return Ok("Problem has been deleted !");
+                return NotFound();
             }
-            return BadRequest("Is Null !");
+
+            return Ok();
         }
 
         /// <summary>
@@ -143,7 +109,7 @@
         /// <response code="200">Returns a success message indicating the problem has been stopped and will be deleted.</response>
         /// <response code="400">Returns if the problem is still running.</response>
         [HttpDelete]
-        [Authorize(Policy = "GlobalVerbRolePolicy")]
+        [AuthorizeRole(RoleConstants.Customer, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> DeleteByStatus(int id)
         {
             var problem = _context.Problems.FirstOrDefault(x => x.Id == id);

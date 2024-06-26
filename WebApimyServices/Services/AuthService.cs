@@ -6,13 +6,15 @@
         private readonly IMapper _mapper;
         private readonly ApplicationDbContext _context;
         private readonly JwtOptions _jwtOptions;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IMapper mapper, ApplicationDbContext context, IOptions<JwtOptions> jwtOptions)
+        public AuthService(UserManager<ApplicationUser> userManager, IMapper mapper, ApplicationDbContext context, IOptions<JwtOptions> jwtOptions, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _mapper = mapper;
             _context = context;
             _jwtOptions = jwtOptions.Value;
+            _logger = logger;
         }
 
         public async Task<AuthModelDto> RegisterCustomerAsync(RegistertionCustomerDto registertionCustomerDto)
@@ -109,61 +111,94 @@
             };
         }
 
-        public async Task<AuthModelDto> LoginAsync(LoginUserDto loginUserDto)
+        public async Task<AuthModelLoginDto> LoginAsync(LoginUserDto loginUserDto)
         {
-            var authModel = new AuthModelDto();
+            var authModel = new AuthModelLoginDto();
 
-            var user = await _userManager.FindByEmailAsync(loginUserDto.Email);
-
-            if (user is null)
-                return new AuthModelDto { Message = "email or password is incorrect" };
-
-            if (!user.EmailConfirmed)
-                return new AuthModelDto { Message = "Email Must Be Confirmed !" };
-
-            if (await _userManager.IsLockedOutAsync(user))
-                return new AuthModelDto { Message = "Your Account Is Locked Out 5 Minutes." };
-
-            var found = await _userManager.CheckPasswordAsync(user, loginUserDto.Password);
-            if (found is true)
+            try
             {
-                await _userManager.ResetAccessFailedCountAsync(user);
+                var user = await _userManager.Users
+                    .Include(u => u.City)
+                        .ThenInclude(c => c.Governorate)
+                    .FirstOrDefaultAsync(u => u.Email == loginUserDto.Email);
 
-                var jwtSecurityToken = await CreateJwtToken(user);
-                var roleList = await _userManager.GetRolesAsync(user);
+                if (user == null)
+                {
+                    authModel.Message = "Email or password is incorrect";
+                    return authModel;
+                }
 
-                authModel.IsAuthenticated = true;
-                authModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-                authModel.Email = user.Email;
-                authModel.UserId = user.Id;
-                authModel.ExpiresOn = jwtSecurityToken.ValidTo;
-                authModel.Roles = roleList.ToList();
-            }
-            else
-            {
-                await _userManager.AccessFailedAsync(user);
+                if (!user.EmailConfirmed)
+                {
+                    authModel.Message = "Email must be confirmed";
+                    return authModel;
+                }
 
                 if (await _userManager.IsLockedOutAsync(user))
-                    return new AuthModelDto { Message = "Your Account Is Locked Out 5 Minutes.." };
-            }
+                {
+                    authModel.Message = "Your account is locked out for 5 minutes";
+                    return authModel;
+                }
 
-            if (user.RefreshTokens.Any(t => t.IsActive))
+                var found = await _userManager.CheckPasswordAsync(user, loginUserDto.Password);
+                if (found)
+                {
+                    await _userManager.ResetAccessFailedCountAsync(user);
+
+                    var jwtSecurityToken = await CreateJwtToken(user);
+                    var roleList = await _userManager.GetRolesAsync(user);
+
+                    authModel.IsAuthenticated = true;
+                    authModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+                    authModel.Email = user.Email;
+                    authModel.UserId = user.Id;
+                    authModel.ExpiresOn = jwtSecurityToken.ValidTo;
+                    authModel.Roles = roleList.ToList();
+
+                    // Populate CityName and GoverName
+                    authModel.CityName = user.City?.Name;
+                    authModel.GoverName = user.City?.Governorate?.Name;
+
+                    // Retrieve or generate refresh token
+                    if (user.RefreshTokens.Any(t => t.IsActive))
+                    {
+                        var activeRefreshToken = user.RefreshTokens.FirstOrDefault(t => t.IsActive);
+                        authModel.RefreshToken = activeRefreshToken.Token;
+                        authModel.RefreshTokenExpiration = activeRefreshToken.ExpiresOn;
+                    }
+                    else
+                    {
+                        var refreshToken = GenerateRefreshToken();
+                        authModel.RefreshToken = refreshToken.Token;
+                        authModel.RefreshTokenExpiration = refreshToken.ExpiresOn;
+
+                        user.RefreshTokens.Add(refreshToken);
+                        await _userManager.UpdateAsync(user);
+                    }
+                }
+                else
+                {
+                    await _userManager.AccessFailedAsync(user);
+
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        authModel.Message = "Your account is locked out for 5 minutes";
+                        return authModel;
+                    }
+                    else
+                    {
+                        authModel.Message = "Email or password is incorrect";
+                        return authModel;
+                    }
+                }
+
+                return authModel;
+            }
+            catch (Exception ex)
             {
-                var activeRefreshToken = user.RefreshTokens.FirstOrDefault(t => t.IsActive);
-                authModel.RefreshToken = activeRefreshToken.Token;
-                authModel.RefreshTokenExpiration = activeRefreshToken.ExpiresOn;
+                _logger.LogError(ex, $"An error occurred while logging in user with email {loginUserDto.Email}.");
+                return null; // Handle or re-throw the exception based on your application's error handling strategy
             }
-            else
-            {
-                var refreshToken = GenerateRefreshToken();
-                authModel.RefreshToken = refreshToken.Token;
-                authModel.RefreshTokenExpiration = refreshToken.ExpiresOn;
-
-                user.RefreshTokens.Add(refreshToken);
-                await _userManager.UpdateAsync(user);
-            }
-
-            return authModel;
         }
 
         public async Task<AuthModelDto> RefreshTokenAsync(string token)

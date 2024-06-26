@@ -57,7 +57,8 @@
             builder.HasMany(c => c.Problems) // User has many Problems
                    .WithOne(b => b.User) // Problems belongs to one User
                    .HasForeignKey(b => b.UserId) // Define foreign key
-                   .IsRequired(true); // UserId is Not Nullable in Book
+                   .IsRequired(true) // UserId is Not Nullable in Book
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(u => u.Job) // user have one job
                    .WithOne(u => u.User) // job belongs to one user

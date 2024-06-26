@@ -13,6 +13,7 @@
         public string Title { get; set; }
         public string Description { get; set; }
         public DateTime CreatedDate { get; set; }
+        public DateTime LastActive { get; set; }
         public virtual ICollection<Problems> Problems { get; set; } = new List<Problems>();
         public virtual ICollection<RefreshToken>? RefreshTokens { get; set; } = new List<RefreshToken>();
         public ICollection<Rate> ReceivedRates { get; set; }

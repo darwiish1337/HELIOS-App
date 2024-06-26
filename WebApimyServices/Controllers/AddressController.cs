@@ -29,8 +29,7 @@
                 .Select(a => new GoverCityDto
                 {
                     Id = a.Id,
-                    NameAR = a.GoverNameAR,
-                    NameEN = a.GoverNameEN
+                    Name = a.Name,
                 })
                 .ToListAsync();
 
@@ -56,8 +55,7 @@
                 .Select(a => new GoverCityDto
                 {
                     Id = a.Id,
-                    NameAR=a.CityNameAR,
-                    NameEN = a.CityNameEN
+                    Name =a.Name,
                 })
                 .ToListAsync();
 

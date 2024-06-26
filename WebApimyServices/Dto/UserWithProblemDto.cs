@@ -50,7 +50,6 @@
     public class ProblemDto
     {
         public int Id { get; set; }
-        public string Name { get; set; }
         public string Description { get; set; } 
         public bool Status { get; set; }
         public string ProblemImg { get; set; } 
@@ -61,8 +60,7 @@
     public class CategoryForProblemAndUserDto
     {
         public int Id { get; set; }
-        public string NameEN { get; set; }
-        public string NameAR { get; set; }
+        public string Name { get; set; }
         public string ImagePath { get; set; }
         public List<ProblemForCategoryDto> Problems { get; set; }
     }
@@ -70,21 +68,18 @@
     public class ProblemForCategoryDto
     {
         public int Id { get; set; }
-        public string Name { get; set; }
         public string Description { get; set; }
         public bool Status { get; set; }
         public string ProblemImg { get; set; }
         public DateTime CreatedDate { get; set; }
         public int CategoryId { get; set; }
-        public string UserId { get; set; }
         public virtual UserForGetProblemDto User { get; set; }
     }
 
     public class ProblemSharedDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } 
-        public string Description { get; set; } 
+        public string Description { get; set; }
         public bool Status { get; set; }
         public string ProblemImg { get; set; } 
         public DateTime CreatedDate { get; set; }
@@ -98,16 +93,14 @@
     public class UserForGetProblemDto
     {
         public string Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
         public string DisplayName { get; set; }
         public string ProfilePicture { get; set; }
+        public string PhoneNumber { get; set; }
     }
 
     public class CategoryForProblemDto
     {
         public int Id { get; set; }
-        public string NameEN { get; set; }
-        public string NameAR { get; set; }
+        public string Name { get; set; }
     }
 }

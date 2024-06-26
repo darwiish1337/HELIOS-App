@@ -6,13 +6,15 @@
         private readonly string _imagesPath;
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(IWebHostEnvironment webHostEnvironment, ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public UserService(IWebHostEnvironment webHostEnvironment, ApplicationDbContext context, UserManager<ApplicationUser> userManager, ILogger<UserService> logger)
         {
             _webHostEnvironment = webHostEnvironment;
             _imagesPath = $"{_webHostEnvironment.WebRootPath}{FileSettings.ImagePathProfile}";
             _context = context;
             _userManager = userManager;
+            _logger = logger;
         }
 
         public async Task<bool> ChangePassowrd(ChangePasswordDto changePasswordDto, string id)
@@ -56,7 +58,6 @@
                               Problems = u.Problems.Select(p => new ProblemDto
                               {
                                   Id = p.Id,
-                                  Name = p.Name,
                                   ProblemImg = p.ProblemImg,
                                   Description = p.Description,
                                   Status = p.Status,
@@ -335,23 +336,26 @@
                 user.JobId = profileDto.JobId;
             }
 
-            // Handle job field based on UserType
-            if (profileDto.UserType == RoleConstants.Factor)
+            // Check if user has problems and delete if true
+            if (user.Problems.Any())
             {
-                if (user.JobId is null)
+                // Iterate over problems to delete their images
+                foreach (var problem in user.Problems)
                 {
-                   throw new ValidationException("JobId is required for Factor");
+                    var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, FileSettings.ImagePathProblems, problem.ProblemImg);
+
+                    if (File.Exists(imagePath))
+                    {
+                        File.Delete(imagePath);
+                        _logger.LogInformation($"Deleted image file: {imagePath}");
+                    }
                 }
 
-                // Load the Problems navigation property
                 await _context.Entry(user).Collection(u => u.Problems).LoadAsync();
 
-                // Check if user has problems and delete if true
-                if (user.Problems.Any())
-                {
-                    _context.Problems.RemoveRange(user.Problems);
-                    await _context.SaveChangesAsync();
-                }
+                // Remove problems from the database
+                _context.Problems.RemoveRange(user.Problems);
+                await _context.SaveChangesAsync();
             }
             else if (profileDto.UserType == RoleConstants.Customer)
             {

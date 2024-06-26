@@ -8,11 +8,7 @@
             builder.Property(c => c.Id)
                    .ValueGeneratedOnAdd();
 
-            builder.Property(c => c.NameEN)
-                   .IsRequired()
-                   .HasMaxLength(30);
-
-            builder.Property(c => c.NameAR)
+            builder.Property(c => c.Name)
                    .IsRequired()
                    .HasMaxLength(30);
         }

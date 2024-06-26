@@ -255,6 +255,7 @@
         /// <response code="200">Returns the updated UserJobInfoDto.</response>
         /// <response code="400">If there is an error processing the request.</response>
         [HttpPost]
+        [AuthorizeRole(RoleConstants.Factor, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> AddTitleAndDescription(string userId, [FromBody] UserJobInfoDto dto)
         {
             try
@@ -277,6 +278,7 @@
         /// <response code="200">Returns the updated UserJobInfoDto.</response>
         /// <response code="400">If there is an error processing the request.</response>
         [HttpPut]
+        [AuthorizeRole(RoleConstants.Factor, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> UpdateTitleAndDescription(string userId, [FromBody] UserJobInfoDto dto)
         {
             try
@@ -298,6 +300,7 @@
         /// <response code="200">Returns the number of rows affected.</response>
         /// <response code="400">If there is an error processing the request.</response>
         [HttpDelete]
+        [AuthorizeRole(RoleConstants.Factor, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
         public async Task<IActionResult> DeleteTitleAndDescription(string userId)
         {
             try
@@ -334,14 +337,46 @@
                 return NotFound("User ID not found in token");
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.Users
+                .Include(u => u.City) // Ensure City is included
+                .ThenInclude(c => c.Governorate) // Include Governorate if City is included
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
             {
                 return NotFound("User not found");
             }
 
-            return Ok(user);
+            // Prepare a DTO or an anonymous object to return only necessary data
+            var userDto = new
+            {
+                user.Id,
+                user.FirstName, 
+                user.LastName,
+                user.DisplayName,
+                user.ProfilePicture,
+                user.UserType,
+                user.Email,
+                user.PhoneNumber,
+                user.CityId,
+                user.City?.GovernorateId,
+                user.JobId,
+                user.Job,
+                user.Title,
+                user.Description,
+                user.CreatedDate,
+                user.LastActive,
+                user.Problems,
+                user.CustomerRates,
+                user.ReceivedRates,
+                user.AverageRating,
+                user.LastFirstnameUpdateDate, 
+                user.LastLastnameUpdateDate,
+                user.LastUserTypeUpdateDate,
+                user.RefreshTokens
+            };
+
+            return Ok(userDto);
         }
     }
 }

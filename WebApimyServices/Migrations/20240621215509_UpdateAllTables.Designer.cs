@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApimyServices.Data;
 
@@ -11,9 +12,11 @@ using WebApimyServices.Data;
 namespace WebApimyServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240621215509_UpdateAllTables")]
+    partial class UpdateAllTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -204,9 +207,6 @@ namespace WebApimyServices.Migrations
 
                     b.Property<int?>("JobId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("LastActive")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("LastFirstnameUpdateDate")
                         .HasMaxLength(50)
@@ -677,6 +677,11 @@ namespace WebApimyServices.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("ProblemImg")
                         .HasMaxLength(100)

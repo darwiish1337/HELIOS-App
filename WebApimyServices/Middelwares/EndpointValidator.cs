@@ -1,4 +1,4 @@
-﻿namespace WebApimyServices.Helpers
+﻿namespace WebApimyServices.Middelwares
 {
     public static class EndpointValidator
     {

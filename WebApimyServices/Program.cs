@@ -18,13 +18,8 @@ builder.Services.AddTransient<IUserService, UserService>();
 // Add Rate Service
 builder.Services.AddTransient<IRateService, RateService>();
 
-// Add Role Policy With Handler
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("GlobalVerbRolePolicy", policy =>
-        policy.Requirements.Add(new GlobalVerbRoleRequirement()));
-});
-builder.Services.AddSingleton<IAuthorizationHandler, GlobalVerbRoleHandler>();
+//
+builder.Services.AddScoped<UpdateLastActiveMiddleware>();
 
 // Identity userManger
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(services =>
@@ -176,7 +171,15 @@ builder.Services.AddHangfire(config => config
    }));
 
 builder.Services.AddHangfireServer();
-builder.Services.AddScoped<HangfireService>();
+
+// Add the RemoveAccountService as a scoped service
+builder.Services.AddScoped<RemoveAccountService>();
+
+// Add the ImageCleanupService as a scoped service
+builder.Services.AddScoped<IImageCleanupService, ImageCleanupService>();
+
+//
+builder.Services.AddScoped<UserCleanupService>();
 
 var app = builder.Build();
 
@@ -204,13 +207,23 @@ app.UseCors("MyPolicy");
 
 app.UseHangfireDashboard("/dashborad");
 
-// Handfire Job Remove Account
-RecurringJob.AddOrUpdate<HangfireService>(
+// Schedule Hangfire Remove Account
+RecurringJob.AddOrUpdate<RemoveAccountService>(
     "CheckAndRemoveUnconfirmedUsers",
     service => service.CheckAndRemoveUnconfirmedUsers(),
-    Cron.HourInterval(1));
+    Cron.Hourly);
 
-//Validate the token in middleware
+// Schedule Hangfire Remove Img
+RecurringJob.AddOrUpdate<IImageCleanupService>
+    ("cleanup-orphans", service 
+    => service.CleanupOrphanedImages(), Cron.Hourly);
+
+// Schedule Hangfire Remove Account If he didnt active 30 days
+RecurringJob.AddOrUpdate<UserCleanupService>(
+    service => service.CleanupInactiveUsers(),
+    Cron.Daily);
+
+// Validate the token in middleware
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value;
@@ -237,7 +250,7 @@ app.Use(async (context, next) =>
     };
 
     // Check if the request is for a static file
-    if (path.StartsWith("/assets/") || (path.StartsWith("/wwwroot/") || (path.StartsWith("/root/") || (path.Contains("/assets/")))))
+    if (path.Contains("/assets/"))
     {
         await next();
         return;
@@ -306,6 +319,11 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+// Update last active for user Middelware
+app.UseMiddleware<UpdateLastActiveMiddleware>();
+
+app.UseSwagger();
 
 app.UseEndpoints(endpoints =>
 {

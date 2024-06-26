@@ -4,10 +4,7 @@
     {
         public void Configure(EntityTypeBuilder<City> builder)
         {
-            builder.Property(c => c.CityNameAR)
-                   .HasMaxLength(30);
-
-            builder.Property(c => c.CityNameEN)
+            builder.Property(c => c.Name)
                    .HasMaxLength(30);
 
             builder.HasMany(c => c.User) // User has many Cities

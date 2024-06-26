@@ -4,11 +4,7 @@
     {
         public void Configure(EntityTypeBuilder<Governorate> builder)
         {
-            builder.Property(g => g.GoverNameAR)
-                   .IsRequired()
-                   .HasMaxLength(30);
-
-            builder.Property (g => g.GoverNameEN)
+            builder.Property(g => g.Name)
                    .IsRequired()
                    .HasMaxLength(30);
 
