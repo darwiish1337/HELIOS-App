@@ -14,13 +14,13 @@
         public string Description { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime LastActive { get; set; }
+        public decimal AverageRating { get; set; }
         public virtual ICollection<Problems> Problems { get; set; } = new List<Problems>();
         public virtual ICollection<RefreshToken>? RefreshTokens { get; set; } = new List<RefreshToken>();
         public ICollection<Rate> ReceivedRates { get; set; }
         public ICollection<Rate> CustomerRates { get; set; }
         public int? JobId { get; set; }
         public virtual Job? Job { get; set; }
-        public decimal AverageRating { get; set; }
         public int CityId { get; set; }
         public virtual City? City { get; set; } 
     }

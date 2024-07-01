@@ -42,7 +42,8 @@
 
         public IEnumerable<UserDto> GetUserInCustomerRoleWithProblems()
         {
-            var users = _userManager.GetUsersInRoleAsync(RoleConstants.Customer).Result
+            var users = _userManager.Users
+                          .Where(u => u.UserType == RoleConstants.Customer)
                           .Select(u => new UserDto
                           {
                               Id = u.Id,
@@ -170,7 +171,7 @@
             return new UpdateResult { Success = true, User = user };
         }
 
-        public async Task<UserJobInfoDto> AddTitleAndDescriptionAsync(string userId, UserJobInfoDto dto)
+        public async Task<UserJobInfoDto> Add(string userId, UserJobInfoDto dto)
         {
             var user = await GetUserByIdAsync(userId);
             user.Title = dto.Title;
@@ -185,7 +186,7 @@
             return new UserJobInfoDto { Title = user.Title, Description = user.Description };
         }
 
-        public async Task<UserJobInfoDto> UpdateTitleAndDescriptionAsync(string userId, UserJobInfoDto dto)
+        public async Task<UserJobInfoDto> Update(string userId, UserJobInfoDto dto)
         {
             var user = await GetUserByIdAsync(userId);
 
@@ -209,7 +210,7 @@
             return new UserJobInfoDto { Title = user.Title, Description = user.Description };
         }
 
-        public async Task<int> DeleteTitleAndDescriptionAsync(string userId)
+        public async Task<int> Delete(string userId)
         {
             var user = await GetUserByIdAsync(userId);
             var originalTitle = user.Title;

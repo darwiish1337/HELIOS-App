@@ -104,7 +104,7 @@
         /// <response code="200">Returns a list of users in the Factor role.</response>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsersInFactorRole()
+        public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetFactors()
         {
             var users = _userService.GetUserInFactorRole();
 
@@ -122,7 +122,7 @@
         /// <returns>A list of <see cref="UserDto"/> objects, each containing a user's details and their associated problems.</returns>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserInCustomerRole()
+        public async Task<IActionResult> GetCustomers()
         {
             var users = _userService.GetUserInCustomerRoleWithProblems();
 
@@ -144,7 +144,7 @@
         /// <response code="400">The request was invalid or the customer or factor ID was not found.</response>
         /// <response code="500">An error occurred while adding the rate.</response>
         [HttpPost]
-        public async Task<ActionResult> AddRateAsync([FromBody] AddRateRequestDto request)
+        public async Task<ActionResult> AddRate([FromBody] AddRateRequestDto request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState.Values.ToList());
@@ -175,7 +175,7 @@
         /// <response code="400">The request was invalid or the rate ID was not found.</response>
         /// <response code="500">An error occurred while updating the rate.</response>
         [HttpPut("{rateId}")]
-        public async Task<ActionResult> UpdateRateAsync(int rateId, [FromBody] UpdateRateRequestDto request)
+        public async Task<ActionResult> UpdateRate(int rateId, [FromBody] UpdateRateRequestDto request)
         {
             try
             {
@@ -202,7 +202,7 @@
         /// <response code="400">The request was invalid or the rate ID was not found.</response>
         /// <response code="500">An error occurred while deleting the rate.</response>
         [HttpDelete("{rateId}")]
-        public async Task<ActionResult> DeleteRateAsync(int rateId)
+        public async Task<ActionResult> DeleteRate(int rateId)
         {
             try
             {
@@ -228,7 +228,7 @@
         /// <response code="500">An error occurred while retrieving rates for the factor.</response>
         [HttpGet("{factorId}")]
         [AllowAnonymous]
-        public async Task<ActionResult<FactorRatingDto>> GetRatesForFactorAsync(string factorId)
+        public async Task<ActionResult<FactorRatingDto>> GetRatesForFactor(string factorId)
         {
             try
             {
@@ -256,11 +256,11 @@
         /// <response code="400">If there is an error processing the request.</response>
         [HttpPost]
         [AuthorizeRole(RoleConstants.Factor, unauthorizedMessage: "Please log in to continue", forbiddenMessage: "You do not have the necessary role to access this resource")] // Apply the custom attribute with custom messages
-        public async Task<IActionResult> AddTitleAndDescription(string userId, [FromBody] UserJobInfoDto dto)
+        public async Task<IActionResult> AddTitleAndDescriptionForJob(string userId, [FromBody] UserJobInfoDto dto)
         {
             try
             {
-                var result = await _userService.AddTitleAndDescriptionAsync(userId, dto);
+                var result = await _userService.Add(userId, dto);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -283,7 +283,7 @@
         {
             try
             {
-                var result = await _userService.UpdateTitleAndDescriptionAsync(userId, dto);
+                var result = await _userService.Update(userId, dto);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -305,7 +305,7 @@
         {
             try
             {
-                var rowsAffected = await _userService.DeleteTitleAndDescriptionAsync(userId);
+                var rowsAffected = await _userService.Delete(userId);
                 return Ok(new { rowsAffected });
             }
             catch (Exception ex)
